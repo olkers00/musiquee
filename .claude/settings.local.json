@@ -1,0 +1,17 @@
+{
+  "skillOverrides": {
+    "brandkit": "off",
+    "design-taste-frontend-v1": "off",
+    "gpt-taste": "off",
+    "high-end-visual-design": "off",
+    "image-to-code": "off",
+    "imagegen-frontend-mobile": "off",
+    "imagegen-frontend-web": "off",
+    "industrial-brutalist-ui": "off",
+    "minimalist-ui": "off",
+    "redesign-existing-projects": "off",
+    "stitch-design-taste": "off",
+    "task-observer": "off",
+    "web-design-guidelines": "off"
+  }
+}
