@@ -2,26 +2,35 @@
 
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import { useMusicKit } from "@/hooks/useMusicKit";
+import { useSpotify } from "@/hooks/useSpotify";
 import { PageHeader } from "@/components/common/page-header";
 import { AlbumCard } from "@/components/albums/album-card";
 import { GridCardSkeleton } from "@/components/common/skeletons";
-import type { Track } from "@/lib/types/music";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { TIME_RANGE_LABELS, type Track, type TimeRange } from "@/lib/types/music";
+
+const RANGE_OPTIONS = (Object.keys(TIME_RANGE_LABELS) as TimeRange[]).map((value) => ({
+  value,
+  label: TIME_RANGE_LABELS[value],
+}));
 
 export default function TopAlbumsPage() {
-  const { dataset, status } = useMusicKit();
-  const { topTracksAllTime, topAlbums } = dataset;
+  const { dataset, status } = useSpotify();
   const isLoading = status === "connecting";
+  const [range, setRange] = useState<TimeRange>("medium_term");
   const [query, setQuery] = useState("");
+
+  const topTracks = dataset.topTracks[range];
+  const topAlbums = dataset.topAlbums[range];
 
   const sampleTrackByAlbum = useMemo(() => {
     const map = new Map<string, Track>();
-    topTracksAllTime.forEach((track) => {
+    topTracks.forEach((track) => {
       const key = `${track.artist}::${track.album}`;
       if (!map.has(key)) map.set(key, track);
     });
     return map;
-  }, [topTracksAllTime]);
+  }, [topTracks]);
 
   const albums = useMemo(() => {
     if (!query.trim()) return topAlbums;
@@ -36,7 +45,7 @@ export default function TopAlbumsPage() {
       <PageHeader
         eyebrow="Ranking"
         title="Top albumy"
-        subtitle="Albumy z największą liczbą odtworzeń"
+        subtitle="Albumy najczęściej reprezentowane w Twoim Top 50 utworów"
         action={
           <div className="relative w-full sm:w-60">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-faint" />
@@ -49,6 +58,10 @@ export default function TopAlbumsPage() {
           </div>
         }
       />
+
+      <div className="mb-5">
+        <SegmentedControl options={RANGE_OPTIONS} value={range} onChange={setRange} />
+      </div>
 
       <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {isLoading

@@ -1,7 +1,7 @@
 "use client";
 
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
-import type { ListeningTrend } from "@/lib/types/music";
+import type { PopularityTrendPoint } from "@/lib/types/music";
 import { useMounted } from "@/hooks/useMounted";
 import { ChartSkeleton } from "@/components/common/skeletons";
 
@@ -9,12 +9,12 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: { value
   if (!active || !payload?.length) return null;
   return (
     <div className="glass-strong rounded-lg px-3 py-2 text-xs shadow-pop">
-      <p className="font-semibold text-ink">{payload[0].value} min</p>
+      <p className="font-semibold text-ink">{payload[0].value}/100 popularności</p>
     </div>
   );
 }
 
-export function ListeningTrendChart({ data }: { data: ListeningTrend[] }) {
+export function ListeningTrendChart({ data }: { data: PopularityTrendPoint[] }) {
   const mounted = useMounted();
 
   return (
@@ -40,7 +40,7 @@ export function ListeningTrendChart({ data }: { data: ListeningTrend[] }) {
             <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--hairline)" }} />
             <Area
               type="monotone"
-              dataKey="minutes"
+              dataKey="popularity"
               stroke="#fc3c6a"
               strokeWidth={2.5}
               fill="url(#trendFill)"

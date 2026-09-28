@@ -11,9 +11,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Musiquee — Twoje statystyki Apple Music",
+  title: "Musiquee — Twoje statystyki Spotify",
   description:
-    "Musiquee analizuje Twoje osobiste statystyki słuchania z Apple Music: Top 50 utworów, ulubionych artystów, albumy i historię odtwarzania.",
+    "Musiquee analizuje Twoje osobiste statystyki Spotify: Top 50 utworów, ulubionych artystów, albumy i historię odtwarzania.",
 };
 
 export const viewport: Viewport = {

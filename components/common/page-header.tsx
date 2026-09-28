@@ -2,14 +2,17 @@
 
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils/cn";
 
 export function PageHeader({
   eyebrow,
+  eyebrowClassName,
   title,
   subtitle,
   action,
 }: {
   eyebrow?: string;
+  eyebrowClassName?: string;
   title: string;
   subtitle?: string;
   action?: ReactNode;
@@ -23,7 +26,9 @@ export function PageHeader({
     >
       <div>
         {eyebrow && (
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-accent">{eyebrow}</p>
+          <p className={cn("mb-1 text-xs font-semibold uppercase tracking-wider text-accent", eyebrowClassName)}>
+            {eyebrow}
+          </p>
         )}
         <h1 className="text-[26px] font-semibold tracking-tight text-ink sm:text-3xl">{title}</h1>
         {subtitle && <p className="mt-1.5 text-sm text-ink-soft">{subtitle}</p>}

@@ -1,28 +1,18 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
-import type { PlayableTrack } from "@/lib/types/music";
-import { SynthPreviewPlayer } from "@/lib/player/synth-preview";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { Playable } from "@/lib/types/music";
 
-const PREVIEW_CAP_SEC = 30;
+const SYNTHESIZED_DURATION_SEC = 30;
 
 interface PlayerContextValue {
-  currentTrack: PlayableTrack | null;
+  currentTrack: Playable | null;
   isPlaying: boolean;
   isBuffering: boolean;
   progressSec: number;
   durationSec: number;
   isSynthesized: boolean;
-  play: (track: PlayableTrack) => void;
+  play: (track: Playable) => void;
   toggle: () => void;
   seek: (seconds: number) => void;
   stop: () => void;
@@ -31,171 +21,139 @@ interface PlayerContextValue {
 const PlayerContext = createContext<PlayerContextValue | null>(null);
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
-  const [currentTrack, setCurrentTrack] = useState<PlayableTrack | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [currentTrack, setCurrentTrack] = useState<Playable | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [progressSec, setProgressSec] = useState(0);
-  const [durationSec, setDurationSec] = useState(PREVIEW_CAP_SEC);
+  const [durationSec, setDurationSec] = useState(SYNTHESIZED_DURATION_SEC);
   const [isSynthesized, setIsSynthesized] = useState(false);
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const synthRef = useRef<SynthPreviewPlayer | null>(null);
 
   useEffect(() => {
     const audio = new Audio();
-    audio.preload = "auto";
     audioRef.current = audio;
-    synthRef.current = new SynthPreviewPlayer();
-
-    return () => {
-      audio.pause();
-      audio.src = "";
-      synthRef.current?.stop();
-    };
-  }, []);
-
-  const stop = useCallback(() => {
-    audioRef.current?.pause();
-    if (audioRef.current) audioRef.current.currentTime = 0;
-    synthRef.current?.stop();
-    setIsPlaying(false);
-    setProgressSec(0);
-  }, []);
-
-  const play = useCallback((track: PlayableTrack) => {
-    const audio = audioRef.current;
-    const synth = synthRef.current;
-    if (!audio || !synth) return;
-
-    audio.pause();
-    synth.stop();
-
-    const capSec = Math.min(PREVIEW_CAP_SEC, (track.durationMs || PREVIEW_CAP_SEC * 1000) / 1000);
-    setCurrentTrack(track);
-    setProgressSec(0);
-    setDurationSec(capSec);
-
-    if (track.previewUrl) {
-      setIsSynthesized(false);
-      setIsBuffering(true);
-      audio.src = track.previewUrl;
-      audio.currentTime = 0;
-      audio
-        .play()
-        .then(() => {
-          setIsBuffering(false);
-          setIsPlaying(true);
-        })
-        .catch(() => {
-          setIsBuffering(false);
-          setIsPlaying(false);
-        });
-    } else {
-      setIsSynthesized(true);
-      setIsBuffering(false);
-      setIsPlaying(true);
-      synth.play(
-        track.id,
-        capSec,
-        (seconds) => setProgressSec(seconds),
-        () => {
-          setIsPlaying(false);
-          setProgressSec(0);
-        }
-      );
-    }
-  }, []);
-
-  const toggle = useCallback(() => {
-    if (!currentTrack) return;
-    const audio = audioRef.current;
-    const synth = synthRef.current;
-
-    if (isPlaying) {
-      if (isSynthesized) {
-        const elapsed = synth?.pause() ?? progressSec;
-        setProgressSec(elapsed);
-      } else {
-        audio?.pause();
-      }
-      setIsPlaying(false);
-    } else {
-      if (isSynthesized) {
-        synth?.play(
-          currentTrack.id,
-          durationSec,
-          (seconds) => setProgressSec(seconds),
-          () => {
-            setIsPlaying(false);
-            setProgressSec(0);
-          },
-          progressSec
-        );
-        setIsPlaying(true);
-      } else {
-        audio?.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
-      }
-    }
-  }, [currentTrack, isPlaying, isSynthesized, progressSec, durationSec]);
-
-  const seek = useCallback(
-    (seconds: number) => {
-      const clamped = Math.max(0, Math.min(seconds, durationSec));
-      setProgressSec(clamped);
-      if (!currentTrack) return;
-
-      if (isSynthesized) {
-        synthRef.current?.stop();
-        if (isPlaying) {
-          synthRef.current?.play(
-            currentTrack.id,
-            durationSec,
-            (s) => setProgressSec(s),
-            () => {
-              setIsPlaying(false);
-              setProgressSec(0);
-            },
-            clamped
-          );
-        }
-      } else if (audioRef.current) {
-        audioRef.current.currentTime = clamped;
-      }
-    },
-    [currentTrack, durationSec, isPlaying, isSynthesized]
-  );
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
 
     const onTimeUpdate = () => setProgressSec(audio.currentTime);
+    const onLoadedMetadata = () => {
+      setDurationSec(Number.isFinite(audio.duration) ? Math.min(audio.duration, 30) : SYNTHESIZED_DURATION_SEC);
+      setIsBuffering(false);
+    };
+    const onWaiting = () => setIsBuffering(true);
+    const onPlaying = () => setIsBuffering(false);
     const onEnded = () => {
       setIsPlaying(false);
       setProgressSec(0);
     };
 
     audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("loadedmetadata", onLoadedMetadata);
+    audio.addEventListener("waiting", onWaiting);
+    audio.addEventListener("playing", onPlaying);
     audio.addEventListener("ended", onEnded);
+
     return () => {
+      audio.pause();
       audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("loadedmetadata", onLoadedMetadata);
+      audio.removeEventListener("waiting", onWaiting);
+      audio.removeEventListener("playing", onPlaying);
       audio.removeEventListener("ended", onEnded);
     };
   }, []);
 
-  const value = useMemo<PlayerContextValue>(
-    () => ({
-      currentTrack,
-      isPlaying,
-      isBuffering,
-      progressSec,
-      durationSec,
-      isSynthesized,
-      play,
-      toggle,
-      seek,
-      stop,
-    }),
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const startSynthesizedTimer = useCallback(
+    (fromSec: number) => {
+      clearTimer();
+      timerRef.current = setInterval(() => {
+        setProgressSec((prev) => {
+          const next = prev + 0.25;
+          if (next >= SYNTHESIZED_DURATION_SEC) {
+            clearTimer();
+            setIsPlaying(false);
+            return 0;
+          }
+          return next;
+        });
+      }, 250);
+      setProgressSec(fromSec);
+    },
+    [clearTimer]
+  );
+
+  const play = useCallback(
+    (track: Playable) => {
+      const audio = audioRef.current;
+      const synthesized = !track.previewUrl;
+
+      clearTimer();
+      audio?.pause();
+
+      setCurrentTrack(track);
+      setIsSynthesized(synthesized);
+      setProgressSec(0);
+      setDurationSec(SYNTHESIZED_DURATION_SEC);
+      setIsPlaying(true);
+
+      if (synthesized || !audio) {
+        startSynthesizedTimer(0);
+        return;
+      }
+
+      setIsBuffering(true);
+      audio.src = track.previewUrl!;
+      void audio.play().catch(() => setIsPlaying(false));
+    },
+    [clearTimer, startSynthesizedTimer]
+  );
+
+  const toggle = useCallback(() => {
+    if (!currentTrack) return;
+    const audio = audioRef.current;
+
+    if (isPlaying) {
+      if (isSynthesized) clearTimer();
+      else audio?.pause();
+      setIsPlaying(false);
+      return;
+    }
+
+    setIsPlaying(true);
+    if (isSynthesized) startSynthesizedTimer(progressSec);
+    else void audio?.play().catch(() => setIsPlaying(false));
+  }, [currentTrack, isPlaying, isSynthesized, progressSec, clearTimer, startSynthesizedTimer]);
+
+  const seek = useCallback(
+    (seconds: number) => {
+      const audio = audioRef.current;
+      if (isSynthesized) {
+        setProgressSec(seconds);
+        if (isPlaying) startSynthesizedTimer(seconds);
+      } else if (audio) {
+        audio.currentTime = seconds;
+      }
+    },
+    [isSynthesized, isPlaying, startSynthesizedTimer]
+  );
+
+  const stop = useCallback(() => {
+    clearTimer();
+    audioRef.current?.pause();
+    setCurrentTrack(null);
+    setIsPlaying(false);
+    setProgressSec(0);
+  }, [clearTimer]);
+
+  const value = useMemo(
+    () => ({ currentTrack, isPlaying, isBuffering, progressSec, durationSec, isSynthesized, play, toggle, seek, stop }),
     [currentTrack, isPlaying, isBuffering, progressSec, durationSec, isSynthesized, play, toggle, seek, stop]
   );
 
@@ -204,6 +162,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
 export function usePlayer(): PlayerContextValue {
   const ctx = useContext(PlayerContext);
-  if (!ctx) throw new Error("usePlayer must be used within a PlayerProvider");
+  if (!ctx) throw new Error("usePlayer must be used within PlayerProvider");
   return ctx;
 }

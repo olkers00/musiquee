@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Disc3, History, LayoutGrid, ListMusic, Mic2 } from "lucide-react";
 import { Logo } from "./logo";
 import { cn } from "@/lib/utils/cn";
-import { ConnectAppleMusicButton } from "@/components/common/connect-apple-music-button";
+import { ConnectSpotifyButton } from "@/components/common/connect-spotify-button";
 
 const NAV_ITEMS = [
   { href: "/", label: "Pulpit", icon: LayoutGrid },
@@ -57,7 +57,7 @@ export function Sidebar() {
 
       <div className="mt-auto space-y-4">
         <div className="h-px bg-hairline" />
-        <ConnectAppleMusicButton compact />
+        <ConnectSpotifyButton compact />
         <p className="px-1 text-[11px] leading-relaxed text-ink-faint">
           Musiquee analizuje Twoje statystyki lokalnie w przeglądarce — dane nie opuszczają Twojego urządzenia.
         </p>

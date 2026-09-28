@@ -1,18 +1,39 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
 
 export type ThemeMode = "light" | "dark" | "system";
 
 const STORAGE_KEY = "musiquee:theme";
-const SSR_DEFAULT_MODE: ThemeMode = "dark";
+const DEFAULT_MODE: ThemeMode = "dark";
+const listeners = new Set<() => void>();
+
+function readStoredMode(): ThemeMode {
+  return (localStorage.getItem(STORAGE_KEY) as ThemeMode | null) ?? DEFAULT_MODE;
+}
+
+function subscribe(callback: () => void): () => void {
+  listeners.add(callback);
+  return () => listeners.delete(callback);
+}
+
+function writeStoredMode(mode: ThemeMode): void {
+  localStorage.setItem(STORAGE_KEY, mode);
+  listeners.forEach((listener) => listener());
+}
+
+function resolve(mode: ThemeMode): "light" | "dark" {
+  if (mode === "system") {
+    return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  }
+  return mode;
+}
+
+function applyTheme(mode: ThemeMode) {
+  document.documentElement.setAttribute("data-theme", resolve(mode));
+}
 
 interface ThemeContextValue {
   mode: ThemeMode;
@@ -21,62 +42,32 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function resolveTheme(mode: ThemeMode): "light" | "dark" {
-  if (mode === "system") {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-  return mode;
-}
-
-function applyTheme(mode: ThemeMode) {
-  document.documentElement.setAttribute("data-theme", resolveTheme(mode));
-}
-
-function readStoredMode(): ThemeMode {
-  const saved = window.localStorage.getItem(STORAGE_KEY);
-  return saved === "light" || saved === "dark" || saved === "system" ? saved : SSR_DEFAULT_MODE;
-}
-
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // Always starts at the same value the server rendered (SSR has no access
-  // to localStorage), so the first client render matches and hydrates
-  // cleanly — the real stored mode is picked up right after mount instead.
-  const [mode, setModeState] = useState<ThemeMode>(SSR_DEFAULT_MODE);
-
-  useEffect(() => {
-    // Deferred so this mount-time correction never lands a state update
-    // synchronously inside the effect that reads it (and, more importantly,
-    // strictly after the hydration commit, so it can never mismatch it).
-    const timer = window.setTimeout(() => setModeState(readStoredMode()), 0);
-    return () => window.clearTimeout(timer);
-  }, []);
+  const mode = useSyncExternalStore(subscribe, readStoredMode, () => DEFAULT_MODE);
 
   useEffect(() => {
     applyTheme(mode);
   }, [mode]);
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => {
-      setModeState((current) => {
-        if (current === "system") applyTheme("system");
-        return current;
-      });
-    };
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
+    if (mode !== "system") return;
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const listener = () => applyTheme("system");
+    mql.addEventListener("change", listener);
+    return () => mql.removeEventListener("change", listener);
+  }, [mode]);
 
   const setMode = useCallback((next: ThemeMode) => {
-    window.localStorage.setItem(STORAGE_KEY, next);
-    setModeState(next);
+    writeStoredMode(next);
   }, []);
 
-  return <ThemeContext.Provider value={{ mode, setMode }}>{children}</ThemeContext.Provider>;
+  const value = useMemo(() => ({ mode, setMode }), [mode, setMode]);
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error("useTheme must be used within a ThemeProvider");
+  if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
   return ctx;
 }

@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Disc3, History, LayoutGrid, ListMusic, Menu, Mic2, X } from "lucide-react";
 import { Logo } from "./logo";
 import { cn } from "@/lib/utils/cn";
-import { ConnectAppleMusicButton } from "@/components/common/connect-apple-music-button";
+import { ConnectSpotifyButton } from "@/components/common/connect-spotify-button";
 import { AppThemeSwitcher } from "@/components/common/app-theme-switcher";
 
 const NAV_ITEMS = [
@@ -89,7 +89,7 @@ export function MobileNav() {
 
               <div className="mt-auto space-y-4">
                 <div className="h-px bg-hairline" />
-                <ConnectAppleMusicButton compact />
+                <ConnectSpotifyButton compact />
               </div>
             </motion.div>
           </>

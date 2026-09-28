@@ -2,25 +2,34 @@
 
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import { useMusicKit } from "@/hooks/useMusicKit";
+import { useSpotify } from "@/hooks/useSpotify";
 import { PageHeader } from "@/components/common/page-header";
 import { ArtistCard } from "@/components/artists/artist-card";
 import { GridCardSkeleton } from "@/components/common/skeletons";
-import type { Track } from "@/lib/types/music";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { TIME_RANGE_LABELS, type Track, type TimeRange } from "@/lib/types/music";
+
+const RANGE_OPTIONS = (Object.keys(TIME_RANGE_LABELS) as TimeRange[]).map((value) => ({
+  value,
+  label: TIME_RANGE_LABELS[value],
+}));
 
 export default function TopArtistsPage() {
-  const { dataset, status } = useMusicKit();
-  const { topTracksAllTime, topArtists } = dataset;
+  const { dataset, status } = useSpotify();
   const isLoading = status === "connecting";
+  const [range, setRange] = useState<TimeRange>("medium_term");
   const [query, setQuery] = useState("");
+
+  const topTracks = dataset.topTracks[range];
+  const topArtists = dataset.topArtists[range];
 
   const topTrackByArtist = useMemo(() => {
     const map = new Map<string, Track>();
-    topTracksAllTime.forEach((track) => {
+    topTracks.forEach((track) => {
       if (!map.has(track.artist)) map.set(track.artist, track);
     });
     return map;
-  }, [topTracksAllTime]);
+  }, [topTracks]);
 
   const artists = useMemo(() => {
     if (!query.trim()) return topArtists;
@@ -46,6 +55,10 @@ export default function TopArtistsPage() {
           </div>
         }
       />
+
+      <div className="mb-5">
+        <SegmentedControl options={RANGE_OPTIONS} value={range} onChange={setRange} />
+      </div>
 
       <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {isLoading

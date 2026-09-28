@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useMusicKit } from "@/hooks/useMusicKit";
+import { useSpotify } from "@/hooks/useSpotify";
 import { PageHeader } from "@/components/common/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { HistoryRow } from "@/components/history/history-row";
@@ -10,7 +10,7 @@ import { formatRelativeDay } from "@/lib/utils/format";
 import type { HistoryEntry } from "@/lib/types/music";
 
 export default function HistoryPage() {
-  const { dataset, status } = useMusicKit();
+  const { dataset, status } = useSpotify();
   const { recentlyPlayed } = dataset;
   const isLoading = status === "connecting";
 

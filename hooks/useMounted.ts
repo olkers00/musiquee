@@ -1,9 +1,17 @@
+"use client";
+
 import { useSyncExternalStore } from "react";
 
 const subscribe = () => () => {};
-const getSnapshot = () => true;
-const getServerSnapshot = () => false;
 
+/** True only after the first client render — avoids SSR/hydration
+ *  mismatches for libraries (Recharts) that measure the DOM. Implemented
+ *  via useSyncExternalStore (server snapshot false, client snapshot true)
+ *  rather than a mount-effect + setState, per React's hydration guidance. */
 export function useMounted(): boolean {
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  return useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false
+  );
 }

@@ -21,7 +21,7 @@ export function GenreBreakdown({ data }: { data: GenreBreakdownEntry[] }) {
             <PieChart>
               <Pie
                 data={top}
-                dataKey="minutes"
+                dataKey="weight"
                 nameKey="genre"
                 innerRadius={44}
                 outerRadius={64}

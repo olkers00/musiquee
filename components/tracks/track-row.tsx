@@ -5,7 +5,7 @@ import type { Track } from "@/lib/types/music";
 import { usePlayer } from "@/hooks/usePlayer";
 import { TrackArtwork } from "@/components/ui/track-artwork";
 import { Badge } from "@/components/ui/badge";
-import { formatDuration, formatPlays } from "@/lib/utils/format";
+import { formatDuration, formatPopularity } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 
 interface TrackRowProps {
@@ -74,7 +74,7 @@ export function TrackRow({ track, rank, index = 0, showAlbum = true, dense = fal
       </div>
 
       <span className="hidden shrink-0 text-xs text-ink-faint tabular-nums sm:block">
-        {formatPlays(track.plays)}
+        {formatPopularity(track.popularity)}
       </span>
 
       <span className="hidden shrink-0 w-12 text-right text-xs text-ink-faint tabular-nums md:block">

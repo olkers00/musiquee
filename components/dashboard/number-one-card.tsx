@@ -6,7 +6,7 @@ import type { Track } from "@/lib/types/music";
 import { usePlayer } from "@/hooks/usePlayer";
 import MusicArtwork from "@/components/ui/music-artwork";
 import { Card } from "@/components/ui/card";
-import { formatPlays } from "@/lib/utils/format";
+import { formatPopularity } from "@/lib/utils/format";
 
 export function NumberOneCard({ track }: { track: Track }) {
   const { currentTrack, isPlaying, play, toggle } = usePlayer();
@@ -43,7 +43,7 @@ export function NumberOneCard({ track }: { track: Track }) {
             {track.artist} · {track.album}
           </p>
           <p className="mt-4 text-xs text-ink-faint">
-            {formatPlays(track.plays)} w tym miesiącu · Najedź na okładkę, aby zobaczyć winyl
+            Popularność {formatPopularity(track.popularity)}/100 · Najedź na okładkę, aby zobaczyć winyl
           </p>
         </div>
       </div>

@@ -1,29 +1,39 @@
-export type TimeRange = "month" | "all" | "custom";
+/**
+ * Spotify's own top-items windows — used verbatim as the range selector
+ * everywhere (dashboard default, top tracks, top artists, top albums).
+ */
+export type TimeRange = "short_term" | "medium_term" | "long_term";
+
+export const TIME_RANGE_LABELS: Record<TimeRange, string> = {
+  short_term: "Ostatnie 4 tygodnie",
+  medium_term: "Ostatnie 6 miesięcy",
+  long_term: "Cały czas",
+};
 
 export interface Track {
   id: string;
   title: string;
   artist: string;
+  artistId: string | null;
   album: string;
+  albumId: string | null;
+  albumReleaseYear: number;
   artwork: string;
-  genre: string;
   durationMs: number;
-  plays: number;
-  minutesListened: number;
-  explicit?: boolean;
-  previewUrl?: string | null;
-  lastPlayedAt: string;
-  addedToLibraryAt?: string;
+  explicit: boolean;
+  popularity: number;
+  previewUrl: string | null;
+  externalUrl: string;
 }
 
 export interface Artist {
   id: string;
   name: string;
   artwork: string;
-  genre: string;
-  plays: number;
-  minutesListened: number;
-  topTrack: string;
+  genres: string[];
+  popularity: number;
+  followers: number;
+  externalUrl: string;
 }
 
 export interface Album {
@@ -31,10 +41,6 @@ export interface Album {
   title: string;
   artist: string;
   artwork: string;
-  genre: string;
-  trackCount: number;
-  plays: number;
-  minutesListened: number;
   releaseYear: number;
 }
 
@@ -45,51 +51,47 @@ export interface HistoryEntry {
   artist: string;
   album: string;
   artwork: string;
-  playedAt: string;
   durationMs: number;
-  previewUrl?: string | null;
+  previewUrl: string | null;
+  playedAt: string;
 }
 
 export interface GenreBreakdownEntry {
   genre: string;
-  minutes: number;
+  weight: number;
   percentage: number;
 }
 
-export interface ListeningTrend {
+export interface PopularityTrendPoint {
   label: string;
-  minutes: number;
+  popularity: number;
 }
 
-export interface ListeningStats {
-  totalMinutesThisMonth: number;
-  totalMinutesAllTime: number;
-  topGenre: string;
+export interface DashboardStats {
   numberOneTrack: Track;
+  avgPopularity: number;
+  avgDanceability: number | null;
+  topGenre: string;
   genreBreakdown: GenreBreakdownEntry[];
-  trend: ListeningTrend[];
-  dailyAverageMinutes: number;
-  uniqueArtistsThisMonth: number;
+  uniqueArtists: number;
+  popularityTrend: PopularityTrendPoint[];
 }
 
-export interface MusicDataset {
-  stats: ListeningStats;
-  topTracksMonth: Track[];
-  topTracksAllTime: Track[];
-  topArtists: Artist[];
-  topAlbums: Album[];
+export interface Dataset {
+  topTracks: Record<TimeRange, Track[]>;
+  topArtists: Record<TimeRange, Artist[]>;
+  topAlbums: Record<TimeRange, Album[]>;
   recentlyPlayed: HistoryEntry[];
+  stats: DashboardStats;
 }
 
-export type ConnectionMode = "demo" | "apple-music";
-
-export interface PlayableTrack {
+/** Minimal shape the player needs — satisfied by Track and HistoryEntry alike. */
+export interface Playable {
   id: string;
   title: string;
   artist: string;
   album: string;
   artwork: string;
   durationMs: number;
-  previewUrl?: string | null;
+  previewUrl: string | null;
 }
-

@@ -5,7 +5,6 @@ import { Pause, Play } from "lucide-react";
 import Image from "next/image";
 import type { Artist, Track } from "@/lib/types/music";
 import { usePlayer } from "@/hooks/usePlayer";
-import { formatListeningTime, formatPlays } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 
 export function ArtistCard({ artist, topTrack, index = 0 }: { artist: Artist; topTrack?: Track; index?: number }) {
@@ -58,7 +57,7 @@ export function ArtistCard({ artist, topTrack, index = 0 }: { artist: Artist; to
       <div className="mt-3 text-center">
         <p className="truncate text-sm font-semibold text-ink">{artist.name}</p>
         <p className="mt-0.5 truncate text-xs text-ink-faint">
-          {formatPlays(artist.plays)} · {formatListeningTime(artist.minutesListened)}
+          {artist.genres.slice(0, 2).join(", ") || "Muzyka"} · Popularność {artist.popularity}
         </p>
       </div>
     </motion.div>
