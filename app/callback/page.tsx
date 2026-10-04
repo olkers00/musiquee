@@ -31,6 +31,8 @@ export default function CallbackPage() {
     }
 
     run().catch((err) => {
+      // eslint-disable-next-line no-console
+      console.error("[Musiquee/Spotify OAuth] Callback failed:", err);
       setError(err instanceof SpotifyAuthError ? err.message : "Nie udało się połączyć ze Spotify.");
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

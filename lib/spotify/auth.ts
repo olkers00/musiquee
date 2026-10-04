@@ -18,7 +18,6 @@ export class SpotifyAuthError extends Error {}
  *  URIs at https://developer.spotify.com/dashboard, so surfacing it here
  *  turns a cryptic Spotify-hosted error page into an actionable fix. */
 function logRedirectUriSetup(redirectUri: string): void {
-  if (process.env.NODE_ENV === "production") return;
   // eslint-disable-next-line no-console
   console.info(
     `%c[Musiquee/Spotify OAuth]%c Add these EXACT Redirect URIs in the dashboard\n` +
@@ -61,6 +60,31 @@ interface TokenResponse {
   expires_in: number;
 }
 
+interface TokenErrorResponse {
+  error?: string;
+  error_description?: string;
+}
+
+/** Spotify's token endpoint returns a JSON body describing exactly what
+ *  went wrong (e.g. "invalid_grant" / "Invalid redirect URI") — logging it
+ *  turns a generic "połączenie nie powiodło się" into an actionable cause,
+ *  since this app has no server to check (static export, nothing reaches
+ *  Vercel/server logs). */
+async function logTokenEndpointError(context: string, res: Response): Promise<string> {
+  let body: TokenErrorResponse | null = null;
+  try {
+    body = (await res.clone().json()) as TokenErrorResponse;
+  } catch {
+    // body wasn't JSON — fall through with status only
+  }
+  // eslint-disable-next-line no-console
+  console.error(
+    `[Musiquee/Spotify OAuth] ${context} failed — ${res.status} ${res.statusText}`,
+    body ?? "(no JSON body)"
+  );
+  return body?.error_description || body?.error || res.statusText;
+}
+
 function storeTokenResponse(res: TokenResponse, fallbackRefreshToken: string | null): StoredTokens {
   const tokens: StoredTokens = {
     accessToken: res.access_token,
@@ -92,7 +116,8 @@ export async function exchangeCodeForToken(code: string, state: string): Promise
   });
 
   if (!res.ok) {
-    throw new SpotifyAuthError(`Nie udało się wymienić kodu autoryzacji na token (${res.status}).`);
+    const reason = await logTokenEndpointError("Token exchange", res);
+    throw new SpotifyAuthError(`Nie udało się wymienić kodu autoryzacji na token (${res.status}): ${reason}`);
   }
 
   const data: TokenResponse = await res.json();
@@ -113,8 +138,9 @@ export async function refreshAccessToken(refreshToken: string): Promise<StoredTo
   });
 
   if (!res.ok) {
+    const reason = await logTokenEndpointError("Token refresh", res);
     clearStoredTokens();
-    throw new SpotifyAuthError(`Sesja Spotify wygasła (${res.status}) — połącz się ponownie.`);
+    throw new SpotifyAuthError(`Sesja Spotify wygasła (${res.status}: ${reason}) — połącz się ponownie.`);
   }
 
   const data: TokenResponse = await res.json();

@@ -72,13 +72,15 @@ export function SpotifyProvider({ children }: { children: ReactNode }) {
         setStatus("connected");
       } catch (err) {
         if (cancelled) return;
+        // eslint-disable-next-line no-console
+        console.error("[Musiquee/Spotify] Failed to load real dataset:", err);
         logout();
         setMode("demo");
         setDataset(getDemoDataset());
         setErrorMessage(
           err instanceof SpotifyApiError
             ? "Nie udało się pobrać danych ze Spotify — spróbuj połączyć się ponownie."
-            : "Wystąpił błąd połączenia ze Spotify."
+            : `Wystąpił błąd połączenia ze Spotify${err instanceof Error ? `: ${err.message}` : ""}.`
         );
         setStatus("error");
       }

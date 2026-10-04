@@ -31,7 +31,16 @@ export async function spotifyFetch<T>(path: string, retry = true): Promise<T> {
   }
 
   if (!res.ok) {
-    throw new SpotifyApiError(`Spotify API error ${res.status} for ${path}`, res.status);
+    let detail = "";
+    try {
+      const body = await res.clone().json();
+      detail = body?.error?.message ?? "";
+    } catch {
+      // body wasn't JSON
+    }
+    // eslint-disable-next-line no-console
+    console.error(`[Musiquee/Spotify API] ${res.status} for ${path}`, detail || "(no JSON body)");
+    throw new SpotifyApiError(`Spotify API error ${res.status} for ${path}${detail ? `: ${detail}` : ""}`, res.status);
   }
 
   return res.json() as Promise<T>;
