@@ -44,7 +44,7 @@ Aby połączyć prawdziwe konto Spotify:
 
 ### Uprawnienia (scope)
 
-Aplikacja prosi o: `user-top-read`, `user-read-recently-played`, `user-library-read`.
+Aplikacja prosi o: `user-top-read`, `user-read-recently-played`, `user-read-private`.
 
 ### Ograniczenia publicznego Spotify Web API
 

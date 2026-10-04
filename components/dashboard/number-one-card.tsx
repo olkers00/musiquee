@@ -6,6 +6,7 @@ import type { Track } from "@/lib/types/music";
 import { usePlayer } from "@/hooks/usePlayer";
 import MusicArtwork from "@/components/ui/music-artwork";
 import { Card } from "@/components/ui/card";
+import { OpenInSpotify } from "@/components/common/open-in-spotify";
 import { formatPopularity } from "@/lib/utils/format";
 
 export function NumberOneCard({ track }: { track: Track }) {
@@ -34,10 +35,16 @@ export function NumberOneCard({ track }: { track: Track }) {
         </motion.div>
 
         <div className="min-w-0 flex-1">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/25 bg-accent-soft px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-accent">
-            <Crown className="h-3 w-3" />
-            Utwór numer 1
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/25 bg-accent-soft px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-accent">
+              <Crown className="h-3 w-3" />
+              Utwór numer 1
+            </span>
+            <OpenInSpotify
+              url={track.externalUrl}
+              className="h-7 w-7 border border-spotify/25 bg-spotify-soft"
+            />
+          </div>
           <h2 className="mt-3 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{track.title}</h2>
           <p className="mt-1 text-sm text-ink-soft">
             {track.artist} · {track.album}

@@ -30,6 +30,7 @@ function deriveAlbums(tracks: Track[]): Album[] {
         artist: track.artist,
         artwork: track.artwork,
         releaseYear: track.albumReleaseYear,
+        externalUrl: track.externalUrl,
       },
     });
   }

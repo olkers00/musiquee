@@ -5,6 +5,7 @@ import { Pause, Play } from "lucide-react";
 import Image from "next/image";
 import type { Artist, Track } from "@/lib/types/music";
 import { usePlayer } from "@/hooks/usePlayer";
+import { OpenInSpotify } from "@/components/common/open-in-spotify";
 import { cn } from "@/lib/utils/cn";
 
 export function ArtistCard({ artist, topTrack, index = 0 }: { artist: Artist; topTrack?: Track; index?: number }) {
@@ -53,6 +54,10 @@ export function ArtistCard({ artist, topTrack, index = 0 }: { artist: Artist; to
             </span>
           </button>
         )}
+        <OpenInSpotify
+          url={artist.externalUrl}
+          className="absolute right-2 top-2 h-7 w-7 bg-black/55 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
+        />
       </div>
       <div className="mt-3 text-center">
         <p className="truncate text-sm font-semibold text-ink">{artist.name}</p>

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Pause, Play } from "lucide-react";
 import type { Album, Track } from "@/lib/types/music";
 import { usePlayer } from "@/hooks/usePlayer";
+import { OpenInSpotify } from "@/components/common/open-in-spotify";
 import { cn } from "@/lib/utils/cn";
 
 export function AlbumCard({ album, sampleTrack, index = 0 }: { album: Album; sampleTrack?: Track; index?: number }) {
@@ -51,6 +52,10 @@ export function AlbumCard({ album, sampleTrack, index = 0 }: { album: Album; sam
             )}
           </button>
         )}
+        <OpenInSpotify
+          url={album.externalUrl}
+          className="absolute left-2.5 top-2.5 h-7 w-7 bg-black/55 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
+        />
       </div>
       <div className="mt-3">
         <p className="truncate text-sm font-semibold text-ink">{album.title}</p>

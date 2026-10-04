@@ -42,6 +42,7 @@ export interface Album {
   artist: string;
   artwork: string;
   releaseYear: number;
+  externalUrl: string;
 }
 
 export interface HistoryEntry {

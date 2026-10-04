@@ -5,6 +5,7 @@ import type { Track } from "@/lib/types/music";
 import { usePlayer } from "@/hooks/usePlayer";
 import { TrackArtwork } from "@/components/ui/track-artwork";
 import { Badge } from "@/components/ui/badge";
+import { OpenInSpotify } from "@/components/common/open-in-spotify";
 import { formatDuration, formatPopularity } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 
@@ -26,15 +27,22 @@ export function TrackRow({ track, rank, index = 0, showAlbum = true, dense = fal
   };
 
   return (
-    <motion.button
-      type="button"
+    <motion.div
+      role="button"
+      tabIndex={0}
       onClick={handleToggle}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleToggle();
+        }
+      }}
       initial={{ opacity: 0, y: 10 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.35, delay: Math.min(index * 0.025, 0.4) }}
       className={cn(
-        "group flex w-full items-center gap-3.5 rounded-xl px-3 text-left transition-colors duration-150 hover:bg-surface",
+        "group flex w-full cursor-pointer items-center gap-3.5 rounded-xl px-3 text-left transition-colors duration-150 hover:bg-surface",
         dense ? "py-2" : "py-2.5",
         isActive && "bg-surface"
       )}
@@ -80,6 +88,11 @@ export function TrackRow({ track, rank, index = 0, showAlbum = true, dense = fal
       <span className="hidden shrink-0 w-12 text-right text-xs text-ink-faint tabular-nums md:block">
         {formatDuration(track.durationMs)}
       </span>
-    </motion.button>
+
+      <OpenInSpotify
+        url={track.externalUrl}
+        className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+      />
+    </motion.div>
   );
 }
