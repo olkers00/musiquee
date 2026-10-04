@@ -3,18 +3,16 @@
 import { motion } from "framer-motion";
 import { Crown } from "lucide-react";
 import type { Track } from "@/lib/types/music";
-import { usePlayer } from "@/hooks/usePlayer";
 import { useSpotify } from "@/hooks/useSpotify";
 import MusicArtwork from "@/components/ui/music-artwork";
 import { Card } from "@/components/ui/card";
 import { OpenInSpotify } from "@/components/common/open-in-spotify";
 import { formatPopularity } from "@/lib/utils/format";
+import { openSpotifyLink } from "@/lib/utils/spotify-link";
 import { cn } from "@/lib/utils/cn";
 
 export function NumberOneCard({ track }: { track: Track }) {
-  const { currentTrack, isPlaying, play, toggle } = usePlayer();
   const { mode } = useSpotify();
-  const isActive = currentTrack?.id === track.id;
   const locked = mode !== "spotify";
 
   return (
@@ -32,9 +30,8 @@ export function NumberOneCard({ track }: { track: Track }) {
             music={track.title}
             albumArt={track.artwork}
             isSong
-            isPlaying={isActive && isPlaying}
             blurred={locked}
-            onToggle={() => (isActive ? toggle() : play(track))}
+            onToggle={() => openSpotifyLink(track.externalUrl)}
             size={188}
           />
         </motion.div>
@@ -66,7 +63,7 @@ export function NumberOneCard({ track }: { track: Track }) {
           <p className="mt-4 text-xs text-ink-faint">
             {locked
               ? "Zaloguj się do Spotify, aby zobaczyć pełne dane"
-              : `Popularność ${formatPopularity(track.popularity)}/100 · Najedź na okładkę, aby zobaczyć winyl`}
+              : `Popularność ${formatPopularity(track.popularity)}/100 · Otwórz w Spotify, aby posłuchać`}
           </p>
         </div>
       </div>

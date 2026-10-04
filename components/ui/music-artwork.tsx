@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Lock } from "lucide-react";
+import { ExternalLink, Lock } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface MusicArtworkProps {
@@ -10,7 +10,6 @@ interface MusicArtworkProps {
   music: string;
   albumArt: string;
   isSong: boolean;
-  isPlaying: boolean;
   isLoading?: boolean;
   blurred?: boolean;
   onToggle?: () => void;
@@ -20,7 +19,7 @@ interface MusicArtworkProps {
 
 /**
  * Signature hero artwork: hovering reveals a vinyl record sliding out from
- * behind the sleeve, spinning while active. Rotation speed differs for
+ * behind the sleeve, spinning while hovered. Rotation speed differs for
  * songs (0.75 rev/s) vs. albums (0.55 rev/s), matching physical turntable feel.
  */
 export default function MusicArtwork({
@@ -28,7 +27,6 @@ export default function MusicArtwork({
   music,
   albumArt,
   isSong,
-  isPlaying,
   isLoading = false,
   blurred = false,
   onToggle,
@@ -38,23 +36,8 @@ export default function MusicArtwork({
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [rotation, setRotation] = useState(0);
-  const vinylRef = useRef<HTMLDivElement>(null);
 
   const spinDuration = isSong ? 1 / 0.75 : 1 / 0.55;
-
-  useEffect(() => {
-    if (isPlaying) return;
-    if (vinylRef.current) {
-      const computed = window.getComputedStyle(vinylRef.current);
-      const transform = computed.transform;
-      if (transform && transform !== "none") {
-        const matrix = new DOMMatrix(transform);
-        const angle = Math.atan2(matrix.b, matrix.a) * (180 / Math.PI);
-        setRotation(angle < 0 ? angle + 360 : angle);
-      }
-    }
-  }, [isPlaying]);
 
   useEffect(() => {
     if (!isHovered) return;
@@ -116,11 +99,9 @@ export default function MusicArtwork({
           }}
         >
           <div
-            ref={vinylRef}
             className="h-full w-full rounded-full"
             style={{
-              transform: isPlaying ? undefined : `rotate(${rotation}deg)`,
-              animation: isPlaying ? `vinyl-spin ${spinDuration}s linear infinite` : "none",
+              animation: isHovered ? `vinyl-spin ${spinDuration}s linear infinite` : "none",
             }}
           >
             <svg viewBox="0 0 200 200" className="h-full w-full drop-shadow-2xl">
@@ -177,14 +158,7 @@ export default function MusicArtwork({
                 <Lock className="h-4 w-4 text-white/85 transition-opacity duration-200 group-hover:opacity-0" />
                 {onToggle && (
                   <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                    {isPlaying ? (
-                      <div className="flex gap-1">
-                        <span className="h-3.5 w-1 rounded-full bg-white" />
-                        <span className="h-3.5 w-1 rounded-full bg-white" />
-                      </div>
-                    ) : (
-                      <div className="ml-0.5 h-0 w-0 border-y-[6px] border-y-transparent border-l-[9px] border-l-white" />
-                    )}
+                    <ExternalLink className="h-4 w-4 text-white" />
                   </span>
                 )}
               </div>
@@ -204,14 +178,7 @@ export default function MusicArtwork({
                   <p className="truncate text-xs text-white/70">{artist}</p>
                 </div>
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur-md">
-                  {isPlaying ? (
-                    <div className="flex gap-1">
-                      <span className="h-3.5 w-1 rounded-full bg-white" />
-                      <span className="h-3.5 w-1 rounded-full bg-white" />
-                    </div>
-                  ) : (
-                    <div className="ml-0.5 h-0 w-0 border-y-[6px] border-y-transparent border-l-[9px] border-l-white" />
-                  )}
+                  <ExternalLink className="h-4 w-4 text-white" />
                 </div>
               </div>
             </>

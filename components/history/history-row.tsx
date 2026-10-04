@@ -2,9 +2,9 @@
 
 import { motion } from "framer-motion";
 import type { HistoryEntry } from "@/lib/types/music";
-import { usePlayer } from "@/hooks/usePlayer";
 import { useSpotify } from "@/hooks/useSpotify";
 import { TrackArtwork } from "@/components/ui/track-artwork";
+import { openSpotifyLink } from "@/lib/utils/spotify-link";
 import { cn } from "@/lib/utils/cn";
 
 function formatTime(iso: string): string {
@@ -12,55 +12,22 @@ function formatTime(iso: string): string {
 }
 
 export function HistoryRow({ entry, index = 0 }: { entry: HistoryEntry; index?: number }) {
-  const { currentTrack, isPlaying, play, toggle } = usePlayer();
   const { mode } = useSpotify();
-  const isActive = currentTrack?.id === entry.trackId;
   const locked = mode !== "spotify";
-
-  const handleToggle = () => {
-    if (isActive) toggle();
-    else
-      play({
-        id: entry.trackId,
-        title: entry.title,
-        artist: entry.artist,
-        album: entry.album,
-        artwork: entry.artwork,
-        durationMs: entry.durationMs,
-        previewUrl: entry.previewUrl,
-        externalUrl: entry.externalUrl,
-      });
-  };
 
   return (
     <motion.button
       type="button"
-      onClick={handleToggle}
+      onClick={() => openSpotifyLink(entry.externalUrl)}
       initial={{ opacity: 0, x: -8 }}
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.3, delay: Math.min(index * 0.02, 0.3) }}
-      className={cn(
-        "flex w-full items-center gap-3.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-surface",
-        isActive && "bg-surface"
-      )}
+      className="flex w-full items-center gap-3.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-surface"
     >
-      <TrackArtwork
-        src={entry.artwork}
-        alt={entry.title}
-        size={44}
-        isActive={isActive}
-        isPlaying={isActive && isPlaying}
-        blurred={locked}
-      />
+      <TrackArtwork src={entry.artwork} alt={entry.title} size={44} blurred={locked} />
       <div className="min-w-0 flex-1">
-        <p
-          className={cn(
-            "truncate text-sm font-medium",
-            locked && "blur-[5px] select-none",
-            isActive ? "text-accent" : "text-ink"
-          )}
-        >
+        <p className={cn("truncate text-sm font-medium text-ink", locked && "blur-[5px] select-none")}>
           {entry.title}
         </p>
         <p className={cn("truncate text-xs text-ink-soft", locked && "blur-[5px] select-none")}>{entry.artist}</p>

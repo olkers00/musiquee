@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/common/page-header";
 import { ArtistCard } from "@/components/artists/artist-card";
 import { GridCardSkeleton } from "@/components/common/skeletons";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { TIME_RANGE_LABELS, type Track, type TimeRange } from "@/lib/types/music";
+import { TIME_RANGE_LABELS, type TimeRange } from "@/lib/types/music";
 
 const RANGE_OPTIONS = (Object.keys(TIME_RANGE_LABELS) as TimeRange[]).map((value) => ({
   value,
@@ -20,16 +20,13 @@ export default function TopArtistsPage() {
   const [range, setRange] = useState<TimeRange>("medium_term");
   const [query, setQuery] = useState("");
 
-  const topTracks = dataset.topTracks[range];
   const topArtists = dataset.topArtists[range];
 
-  const topTrackByArtist = useMemo(() => {
-    const map = new Map<string, Track>();
-    topTracks.forEach((track) => {
-      if (!map.has(track.artist)) map.set(track.artist, track);
-    });
+  const rankById = useMemo(() => {
+    const map = new Map<string, number>();
+    topArtists.forEach((artist, i) => map.set(artist.id, i + 1));
     return map;
-  }, [topTracks]);
+  }, [topArtists]);
 
   const artists = useMemo(() => {
     if (!query.trim()) return topArtists;
@@ -64,7 +61,7 @@ export default function TopArtistsPage() {
         {isLoading
           ? Array.from({ length: 10 }).map((_, i) => <GridCardSkeleton key={i} />)
           : artists.map((artist, i) => (
-              <ArtistCard key={artist.id} artist={artist} topTrack={topTrackByArtist.get(artist.name)} index={i} />
+              <ArtistCard key={artist.id} artist={artist} rank={rankById.get(artist.id)} index={i} />
             ))}
       </div>
 

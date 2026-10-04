@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Lock, Pause, Play } from "lucide-react";
+import { ExternalLink, Lock } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface TrackArtworkProps {
@@ -9,8 +9,6 @@ interface TrackArtworkProps {
   alt: string;
   size?: number;
   rounded?: string;
-  isActive?: boolean;
-  isPlaying?: boolean;
   blurred?: boolean;
   onToggle?: () => void;
   className?: string;
@@ -21,8 +19,6 @@ export function TrackArtwork({
   alt,
   size = 48,
   rounded = "rounded-lg",
-  isActive = false,
-  isPlaying = false,
   blurred = false,
   onToggle,
   className,
@@ -38,7 +34,6 @@ export function TrackArtwork({
       className={cn(
         "group relative shrink-0 overflow-hidden bg-surface-2 transition-transform duration-200 ease-out",
         onToggle && "cursor-pointer hover:scale-[1.03]",
-        isActive && "ring-2 ring-accent/70",
         rounded,
         className
       )}
@@ -56,44 +51,16 @@ export function TrackArtwork({
         <span className="absolute inset-0 flex items-center justify-center bg-black/25">
           <Lock className="h-1/3 w-1/3 text-white/80 transition-opacity duration-200 group-hover:opacity-0" />
           {onToggle && (
-            <Play className="absolute h-1/3 w-1/3 fill-white text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+            <ExternalLink className="absolute h-1/3 w-1/3 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
           )}
         </span>
       ) : (
         onToggle && (
-          <span
-            className={cn(
-              "absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity duration-200 group-hover:opacity-100",
-              isActive && isPlaying && "opacity-100 bg-black/35"
-            )}
-          >
-            {isActive && isPlaying ? (
-              <Pause className="h-1/3 w-1/3 fill-white text-white" />
-            ) : (
-              <Play className="h-1/3 w-1/3 fill-white text-white" />
-            )}
+          <span className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <ExternalLink className="h-1/3 w-1/3 text-white" />
           </span>
         )
       )}
-      {isActive && isPlaying && (
-        <span className="absolute bottom-1 left-1 flex items-end gap-[2px] h-2.5">
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="w-[2px] rounded-full bg-accent"
-              style={{
-                animation: `eq 0.9s ease-in-out ${i * 0.15}s infinite`,
-              }}
-            />
-          ))}
-        </span>
-      )}
-      <style jsx>{`
-        @keyframes eq {
-          0%, 100% { height: 3px; }
-          50% { height: 10px; }
-        }
-      `}</style>
     </div>
   );
 }

@@ -73,7 +73,7 @@ export default function DashboardPage() {
               sublabel={
                 hasGenres
                   ? `${stats.genreBreakdown[0]?.percentage ?? 0}% Twoich artystów`
-                  : "gatunki niedostępne w API Spotify"
+                  : "w Twoim Top 50"
               }
               icon={Flame}
               delay={0.1}
@@ -108,7 +108,6 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>{hasGenres ? "Gatunki" : "Lata wydania"}</CardTitle>
-            {!hasGenres && <span className="text-xs text-ink-faint">zastępczo — gatunki niedostępne</span>}
           </CardHeader>
           <CardContent>
             <GenreBreakdown data={hasGenres ? stats.genreBreakdown : stats.releaseYearBreakdown} />
