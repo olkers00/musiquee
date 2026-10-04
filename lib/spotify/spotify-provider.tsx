@@ -5,7 +5,7 @@ import type { Artist, Dataset, TimeRange, Track } from "@/lib/types/music";
 import { getDemoDataset } from "@/lib/mock/demo-data";
 import { hasSpotifyClientId } from "./config";
 import { isConnected, logout, redirectToSpotifyAuthorize } from "./auth";
-import { getAverageDanceability, getRecentlyPlayed, getTopArtists, getTopTracks } from "./api";
+import { getArtistsByIds, getAverageDanceability, getRecentlyPlayed, getTopArtists, getTopTracks } from "./api";
 import { buildDataset } from "./dataset";
 import { SpotifyApiError } from "./client";
 
@@ -20,6 +20,7 @@ export interface SpotifyContextValue {
   hasClientId: boolean;
   connect: () => void;
   disconnect: () => void;
+  switchAccount: () => void;
   useDemoMode: () => void;
   notifyAuthenticated: () => void;
 }
@@ -35,12 +36,18 @@ async function fetchRealDataset(): Promise<Dataset> {
   const topTracksByRange = Object.fromEntries(topTracksEntries) as Record<TimeRange, Track[]>;
   const topArtistsByRange = Object.fromEntries(topArtistsEntries) as Record<TimeRange, Artist[]>;
 
-  const [recentlyPlayed, avgDanceability] = await Promise.all([
+  const statsArtistIds = new Set(topArtistsByRange.medium_term.map((a) => a.id));
+  const missingArtistIds = topArtistsByRange.medium_term.length
+    ? topTracksByRange.medium_term.map((t) => t.artistId).filter((id): id is string => !!id && !statsArtistIds.has(id))
+    : [];
+
+  const [recentlyPlayed, avgDanceability, extraGenreArtists] = await Promise.all([
     getRecentlyPlayed(),
     getAverageDanceability(topTracksByRange.medium_term.map((t) => t.id)),
+    getArtistsByIds(missingArtistIds),
   ]);
 
-  return buildDataset({ topTracksByRange, topArtistsByRange, recentlyPlayed, avgDanceability });
+  return buildDataset({ topTracksByRange, topArtistsByRange, recentlyPlayed, avgDanceability, extraGenreArtists });
 }
 
 export function SpotifyProvider({ children }: { children: ReactNode }) {
@@ -104,6 +111,11 @@ export function SpotifyProvider({ children }: { children: ReactNode }) {
     setStatus("connected");
   }, []);
 
+  const switchAccount = useCallback(() => {
+    logout();
+    void redirectToSpotifyAuthorize(true);
+  }, []);
+
   const useDemoMode = useCallback(() => {
     disconnect();
   }, [disconnect]);
@@ -121,10 +133,11 @@ export function SpotifyProvider({ children }: { children: ReactNode }) {
       hasClientId: hasSpotifyClientId(),
       connect,
       disconnect,
+      switchAccount,
       useDemoMode,
       notifyAuthenticated,
     }),
-    [mode, status, dataset, errorMessage, connect, disconnect, useDemoMode, notifyAuthenticated]
+    [mode, status, dataset, errorMessage, connect, disconnect, switchAccount, useDemoMode, notifyAuthenticated]
   );
 
   return <SpotifyContext.Provider value={value}>{children}</SpotifyContext.Provider>;

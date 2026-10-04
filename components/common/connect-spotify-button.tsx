@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Sparkles, Unlink } from "lucide-react";
+import { Loader2, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSpotify } from "@/hooks/useSpotify";
 import { Button } from "@/components/ui/button";
 import { SpotifyGlyph } from "@/components/common/spotify-glyph";
 
 export function ConnectSpotifyButton({ compact = false }: { compact?: boolean }) {
-  const { mode, status, connect, disconnect, useDemoMode, hasClientId, errorMessage } = useSpotify();
+  const { mode, status, connect, switchAccount, hasClientId, errorMessage } = useSpotify();
   const [showInfo, setShowInfo] = useState(false);
 
   const isConnecting = status === "connecting";
@@ -18,9 +18,9 @@ export function ConnectSpotifyButton({ compact = false }: { compact?: boolean })
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         {isConnected ? (
-          <Button variant="secondary" size={compact ? "sm" : "md"} onClick={disconnect} className="w-full">
-            <Unlink className="h-3.5 w-3.5" />
-            Rozłącz Spotify
+          <Button variant="secondary" size={compact ? "sm" : "md"} onClick={switchAccount} className="w-full">
+            <LogOut className="h-3.5 w-3.5" />
+            Wyloguj / Zmień konto
           </Button>
         ) : (
           <Button
@@ -47,23 +47,7 @@ export function ConnectSpotifyButton({ compact = false }: { compact?: boolean })
             Połączono
           </span>
         )}
-
-        {mode === "demo" && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-accent/25 bg-accent-soft px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-accent">
-            <Sparkles className="h-3 w-3" />
-            Demo
-          </span>
-        )}
       </div>
-
-      {mode !== "demo" && (
-        <button
-          onClick={useDemoMode}
-          className="text-left text-xs text-ink-faint hover:text-ink-soft transition-colors"
-        >
-          Przełącz na tryb demo
-        </button>
-      )}
 
       <AnimatePresence>
         {(showInfo || errorMessage) && !hasClientId && (

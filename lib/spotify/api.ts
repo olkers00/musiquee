@@ -83,7 +83,7 @@ export function mapTrack(raw: SpotifyTrack): Track {
     artwork: pickArtwork(raw.album?.images),
     durationMs: raw.duration_ms,
     explicit: raw.explicit,
-    popularity: raw.popularity,
+    popularity: Number(raw.popularity) || 0,
     previewUrl: raw.preview_url,
     externalUrl: raw.external_urls?.spotify ?? "",
   };
@@ -95,7 +95,7 @@ export function mapArtist(raw: SpotifyArtist): Artist {
     name: raw.name,
     artwork: pickArtwork(raw.images),
     genres: raw.genres ?? [],
-    popularity: raw.popularity,
+    popularity: Number(raw.popularity) || 0,
     followers: raw.followers?.total ?? 0,
     externalUrl: raw.external_urls?.spotify ?? "",
   };
@@ -142,6 +142,30 @@ export async function getTopArtists(range: TimeRange, limit = 50): Promise<Artis
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("[Musiquee/Spotify API] getTopArtists failed:", err);
+    return [];
+  }
+}
+
+/** Genres live on Artist objects, never on Track objects — this batches
+ *  /artists lookups (max 50 ids per call) so callers can enrich tracks
+ *  whose artists didn't show up in the Top Artists list. */
+export async function getArtistsByIds(artistIds: string[]): Promise<Artist[]> {
+  const uniqueIds = Array.from(new Set(artistIds.filter(Boolean)));
+  if (uniqueIds.length === 0) return [];
+
+  const batches: string[][] = [];
+  for (let i = 0; i < uniqueIds.length; i += 50) {
+    batches.push(uniqueIds.slice(i, i + 50));
+  }
+
+  try {
+    const results = await Promise.all(
+      batches.map((batch) => spotifyFetch<{ artists: SpotifyArtist[] }>(`/artists?ids=${batch.join(",")}`))
+    );
+    return results.flatMap((res) => res?.artists?.filter(Boolean).map(mapArtist) ?? []);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[Musiquee/Spotify API] getArtistsByIds failed:", err);
     return [];
   }
 }

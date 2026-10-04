@@ -72,6 +72,7 @@ export interface DashboardStats {
   numberOneTrack: Track;
   avgPopularity: number;
   avgDanceability: number | null;
+  avgArtistPopularity: number;
   topGenre: string;
   genreBreakdown: GenreBreakdownEntry[];
   uniqueArtists: number;

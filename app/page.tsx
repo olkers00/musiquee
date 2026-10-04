@@ -41,9 +41,13 @@ export default function DashboardPage() {
               delay={0}
             />
             <StatCard
-              label="Śr. taneczność"
-              value={stats.avgDanceability !== null ? `${Math.round(stats.avgDanceability)}/100` : "Niedostępne"}
-              sublabel={stats.avgDanceability !== null ? "wg Spotify Audio Features" : "ograniczenie dostępu API"}
+              label={stats.avgDanceability !== null ? "Śr. taneczność" : "Popularność artystów"}
+              value={
+                stats.avgDanceability !== null
+                  ? `${Math.round(stats.avgDanceability)}/100`
+                  : `${stats.avgArtistPopularity}/100`
+              }
+              sublabel={stats.avgDanceability !== null ? "wg Spotify Audio Features" : "zastępczy wskaźnik — Audio Features niedostępne"}
               icon={Music2}
               delay={0.05}
             />

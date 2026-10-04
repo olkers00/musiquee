@@ -33,7 +33,7 @@ function logRedirectUriSetup(redirectUri: string): void {
 
 /** Kicks off the Authorization Code + PKCE flow — no client secret needed,
  *  which is the only option that works from a statically exported SPA. */
-export async function redirectToSpotifyAuthorize(): Promise<void> {
+export async function redirectToSpotifyAuthorize(showDialog = false): Promise<void> {
   const redirectUri = getRedirectUri();
   logRedirectUriSetup(redirectUri);
 
@@ -49,6 +49,7 @@ export async function redirectToSpotifyAuthorize(): Promise<void> {
     code_challenge_method: "S256",
     code_challenge: challenge,
     state,
+    ...(showDialog ? { show_dialog: "true" } : {}),
   });
 
   window.location.href = `${SPOTIFY_AUTHORIZE_URL}?${params.toString()}`;

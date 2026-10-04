@@ -42,7 +42,10 @@ function deriveAlbums(tracks: Track[]): Album[] {
 
 function deriveGenreBreakdown(artists: Artist[]): GenreBreakdownEntry[] {
   const weights = new Map<string, number>();
+  const seenArtists = new Set<string>();
   for (const artist of artists) {
+    if (seenArtists.has(artist.id)) continue;
+    seenArtists.add(artist.id);
     for (const genre of artist.genres) {
       weights.set(genre, (weights.get(genre) ?? 0) + 1);
     }
@@ -67,7 +70,7 @@ function derivePopularityTrend(tracks: Track[]): PopularityTrendPoint[] {
   for (let i = 0; i < tracks.length; i += bucketSize) {
     const bucket = tracks.slice(i, i + bucketSize);
     if (bucket.length === 0) continue;
-    const avg = bucket.reduce((sum, t) => sum + t.popularity, 0) / bucket.length;
+    const avg = bucket.reduce((sum, t) => sum + (Number(t.popularity) || 0), 0) / bucket.length;
     points.push({
       label: `#${i + 1}–${i + bucket.length}`,
       popularity: Math.round(avg),
@@ -81,6 +84,10 @@ export interface DatasetSources {
   topArtistsByRange: Record<TimeRange, Artist[]>;
   recentlyPlayed: HistoryEntry[];
   avgDanceability: number | null;
+  /** Artists behind the stats-range top tracks that didn't already appear
+   *  in topArtistsByRange — folded into the genre breakdown only, so tracks
+   *  by artists outside the Top Artists list still count toward genres. */
+  extraGenreArtists?: Artist[];
 }
 
 export function buildDataset(sources: DatasetSources): Dataset {
@@ -91,11 +98,15 @@ export function buildDataset(sources: DatasetSources): Dataset {
 
   const statsTracks = sources.topTracksByRange[STATS_RANGE];
   const statsArtists = sources.topArtistsByRange[STATS_RANGE];
-  const genreBreakdown = deriveGenreBreakdown(statsArtists);
+  const genreBreakdown = deriveGenreBreakdown([...statsArtists, ...(sources.extraGenreArtists ?? [])]);
   const uniqueArtists = new Set(statsTracks.map((t) => t.artistId ?? t.artist)).size;
   const avgPopularity =
     statsTracks.length > 0
-      ? Math.round(statsTracks.reduce((sum, t) => sum + t.popularity, 0) / statsTracks.length)
+      ? Math.round(statsTracks.reduce((sum, t) => sum + (Number(t.popularity) || 0), 0) / statsTracks.length)
+      : 0;
+  const avgArtistPopularity =
+    statsArtists.length > 0
+      ? Math.round(statsArtists.reduce((sum, a) => sum + (Number(a.popularity) || 0), 0) / statsArtists.length)
       : 0;
 
   const numberOneTrack: Track = statsTracks[0] ?? {
@@ -123,6 +134,7 @@ export function buildDataset(sources: DatasetSources): Dataset {
       numberOneTrack,
       avgPopularity,
       avgDanceability: sources.avgDanceability,
+      avgArtistPopularity,
       topGenre: genreBreakdown[0]?.genre ?? "Brak danych",
       genreBreakdown,
       uniqueArtists,

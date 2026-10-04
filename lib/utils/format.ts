@@ -6,7 +6,7 @@ export function formatDuration(ms: number): string {
 }
 
 export function formatPopularity(popularity: number): string {
-  return `${Math.round(popularity)}`;
+  return `${Math.round(Number(popularity) || 0)}`;
 }
 
 export function formatFollowers(followers: number): string {
