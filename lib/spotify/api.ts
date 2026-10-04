@@ -62,8 +62,8 @@ interface SpotifyAudioFeatures {
   valence: number;
 }
 
-function pickArtwork(images: SpotifyImage[]): string {
-  return images[0]?.url ?? FALLBACK_ARTWORK;
+function pickArtwork(images: SpotifyImage[] | undefined): string {
+  return images?.[0]?.url ?? FALLBACK_ARTWORK;
 }
 
 function parseReleaseYear(releaseDate: string): number {
@@ -75,17 +75,17 @@ export function mapTrack(raw: SpotifyTrack): Track {
   return {
     id: raw.id,
     title: raw.name,
-    artist: raw.artists.map((a) => a.name).join(", "),
-    artistId: raw.artists[0]?.id ?? null,
-    album: raw.album.name,
-    albumId: raw.album.id,
-    albumReleaseYear: parseReleaseYear(raw.album.release_date),
-    artwork: pickArtwork(raw.album.images),
+    artist: raw.artists?.map((a) => a.name).join(", ") ?? "",
+    artistId: raw.artists?.[0]?.id ?? null,
+    album: raw.album?.name ?? "",
+    albumId: raw.album?.id ?? "",
+    albumReleaseYear: parseReleaseYear(raw.album?.release_date ?? ""),
+    artwork: pickArtwork(raw.album?.images),
     durationMs: raw.duration_ms,
     explicit: raw.explicit,
     popularity: raw.popularity,
     previewUrl: raw.preview_url,
-    externalUrl: raw.external_urls.spotify,
+    externalUrl: raw.external_urls?.spotify ?? "",
   };
 }
 
@@ -94,10 +94,10 @@ export function mapArtist(raw: SpotifyArtist): Artist {
     id: raw.id,
     name: raw.name,
     artwork: pickArtwork(raw.images),
-    genres: raw.genres,
+    genres: raw.genres ?? [],
     popularity: raw.popularity,
-    followers: raw.followers.total,
-    externalUrl: raw.external_urls.spotify,
+    followers: raw.followers?.total ?? 0,
+    externalUrl: raw.external_urls?.spotify ?? "",
   };
 }
 
@@ -121,24 +121,42 @@ export async function getMe(): Promise<SpotifyMe> {
 }
 
 export async function getTopTracks(range: TimeRange, limit = 50): Promise<Track[]> {
-  const res = await spotifyFetch<SpotifyPagedResponse<SpotifyTrack>>(
-    `/me/top/tracks?time_range=${range}&limit=${limit}`
-  );
-  return res.items.map(mapTrack);
+  try {
+    const res = await spotifyFetch<SpotifyPagedResponse<SpotifyTrack>>(
+      `/me/top/tracks?time_range=${range}&limit=${limit}`
+    );
+    return res?.items?.map(mapTrack) ?? [];
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[Musiquee/Spotify API] getTopTracks failed:", err);
+    return [];
+  }
 }
 
 export async function getTopArtists(range: TimeRange, limit = 50): Promise<Artist[]> {
-  const res = await spotifyFetch<SpotifyPagedResponse<SpotifyArtist>>(
-    `/me/top/artists?time_range=${range}&limit=${limit}`
-  );
-  return res.items.map(mapArtist);
+  try {
+    const res = await spotifyFetch<SpotifyPagedResponse<SpotifyArtist>>(
+      `/me/top/artists?time_range=${range}&limit=${limit}`
+    );
+    return res?.items?.map(mapArtist) ?? [];
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[Musiquee/Spotify API] getTopArtists failed:", err);
+    return [];
+  }
 }
 
 export async function getRecentlyPlayed(limit = 50): Promise<HistoryEntry[]> {
-  const res = await spotifyFetch<SpotifyPagedResponse<SpotifyRecentlyPlayedItem>>(
-    `/me/player/recently-played?limit=${limit}`
-  );
-  return res.items.map(mapHistoryEntry);
+  try {
+    const res = await spotifyFetch<SpotifyPagedResponse<SpotifyRecentlyPlayedItem>>(
+      `/me/player/recently-played?limit=${limit}`
+    );
+    return res?.items?.map(mapHistoryEntry) ?? [];
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[Musiquee/Spotify API] getRecentlyPlayed failed:", err);
+    return [];
+  }
 }
 
 /** Spotify has restricted audio-features access for many apps created after
@@ -151,7 +169,7 @@ export async function getAverageDanceability(trackIds: string[]): Promise<number
     const res = await spotifyFetch<{ audio_features: (SpotifyAudioFeatures | null)[] }>(
       `/audio-features?ids=${ids}`
     );
-    const values = res.audio_features.filter((f): f is SpotifyAudioFeatures => f !== null).map((f) => f.danceability);
+    const values = (res?.audio_features ?? []).filter((f): f is SpotifyAudioFeatures => f !== null).map((f) => f.danceability);
     if (values.length === 0) return null;
     return (values.reduce((sum, v) => sum + v, 0) / values.length) * 100;
   } catch {
