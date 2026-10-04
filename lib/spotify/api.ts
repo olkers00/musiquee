@@ -17,6 +17,8 @@ interface SpotifyAlbum {
   name: string;
   images: SpotifyImage[];
   release_date: string;
+  artists: SpotifyArtistRef[];
+  external_urls: { spotify: string };
 }
 
 interface SpotifyTrack {
@@ -79,6 +81,8 @@ export function mapTrack(raw: SpotifyTrack): Track {
     artistId: raw.artists?.[0]?.id ?? null,
     album: raw.album?.name ?? "",
     albumId: raw.album?.id ?? "",
+    albumArtist: raw.album?.artists?.map((a) => a.name).join(", ") ?? raw.artists?.map((a) => a.name).join(", ") ?? "",
+    albumExternalUrl: raw.album?.external_urls?.spotify ?? "",
     albumReleaseYear: parseReleaseYear(raw.album?.release_date ?? ""),
     artwork: pickArtwork(raw.album?.images),
     durationMs: raw.duration_ms,

@@ -70,6 +70,8 @@ function toTrack(seed: SeedTrack): Track {
     artistId: `demo-artist-${seed.artist}`,
     album: seed.album,
     albumId: `demo-album-${seed.artist}-${seed.album}`,
+    albumArtist: seed.artist,
+    albumExternalUrl: "https://open.spotify.com",
     albumReleaseYear: ALBUM_YEARS[seed.album] ?? new Date().getFullYear(),
     artwork: placeholderArtwork(seed.album, seed.title),
     durationMs: seed.durationMs,

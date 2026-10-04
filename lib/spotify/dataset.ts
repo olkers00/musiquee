@@ -27,10 +27,10 @@ function deriveAlbums(tracks: Track[]): Album[] {
       album: {
         id: key,
         title: track.album,
-        artist: track.artist,
+        artist: track.albumArtist || track.artist,
         artwork: track.artwork,
         releaseYear: track.albumReleaseYear,
-        externalUrl: track.externalUrl,
+        externalUrl: track.albumExternalUrl || track.externalUrl,
       },
     });
   }
@@ -154,6 +154,8 @@ export function buildDataset(sources: DatasetSources): Dataset {
     artistId: null,
     album: "",
     albumId: null,
+    albumArtist: "",
+    albumExternalUrl: "",
     albumReleaseYear: new Date().getFullYear(),
     artwork: "https://placehold.co/300x300/141418/6b6b70?text=%E2%99%AB",
     durationMs: 0,

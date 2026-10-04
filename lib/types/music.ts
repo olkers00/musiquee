@@ -17,6 +17,12 @@ export interface Track {
   artistId: string | null;
   album: string;
   albumId: string | null;
+  /** Primary album artist(s) only (from the album object) — unlike `artist`,
+   *  never includes track-only featuring artists. */
+  albumArtist: string;
+  /** The album's own Spotify page — distinct from `externalUrl`, which
+   *  points at this specific track. */
+  albumExternalUrl: string;
   albumReleaseYear: number;
   artwork: string;
   durationMs: number;
