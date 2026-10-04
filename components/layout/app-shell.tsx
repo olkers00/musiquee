@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Sidebar } from "./sidebar";
 import { MobileNav } from "./mobile-nav";
 import { MiniPlayer } from "@/components/player/mini-player";
+import { PreviewToast } from "@/components/player/preview-toast";
 import { AppThemeSwitcher } from "@/components/common/app-theme-switcher";
 import { usePlayer } from "@/hooks/usePlayer";
 import { cn } from "@/lib/utils/cn";
@@ -22,6 +23,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
       <AppThemeSwitcher className="fixed top-4 right-4 z-50 hidden lg:block" />
       <MiniPlayer />
+      <PreviewToast />
     </div>
   );
 }

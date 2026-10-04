@@ -118,6 +118,7 @@ function buildRecentlyPlayed(tracks: Track[]): HistoryEntry[] {
       artwork: track.artwork,
       durationMs: track.durationMs,
       previewUrl: null,
+      externalUrl: track.externalUrl,
       playedAt: new Date(now - gap * 60_000).toISOString(),
     };
   });

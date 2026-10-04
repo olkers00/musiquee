@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Pause, Play, Radio, X } from "lucide-react";
+import { ExternalLink, Pause, Play, X } from "lucide-react";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useSpotify } from "@/hooks/useSpotify";
 import { TrackArtwork } from "@/components/ui/track-artwork";
@@ -15,8 +15,18 @@ function formatClock(seconds: number): string {
 }
 
 export function MiniPlayer() {
-  const { currentTrack, isPlaying, isBuffering, progressSec, durationSec, isSynthesized, toggle, seek, stop } =
-    usePlayer();
+  const {
+    currentTrack,
+    isPlaying,
+    isBuffering,
+    progressSec,
+    durationSec,
+    previewUnavailable,
+    toggle,
+    seek,
+    stop,
+    openCurrentInSpotify,
+  } = usePlayer();
   const { mode } = useSpotify();
   const locked = mode !== "spotify";
   const trackRef = useRef<HTMLDivElement>(null);
@@ -44,19 +54,25 @@ export function MiniPlayer() {
           <div
             ref={trackRef}
             onMouseMove={(e) => {
-              if (!trackRef.current) return;
+              if (previewUnavailable || !trackRef.current) return;
               const rect = trackRef.current.getBoundingClientRect();
               setHoverPct(Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width)) * 100);
             }}
             onMouseLeave={() => setHoverPct(null)}
-            onClick={handleSeek}
-            className="group relative h-1.5 w-full cursor-pointer bg-surface-2"
+            onClick={previewUnavailable ? undefined : handleSeek}
+            className={cn(
+              "group relative h-1.5 w-full bg-surface-2",
+              previewUnavailable ? "cursor-default" : "cursor-pointer"
+            )}
           >
             <div
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#ff5f6d] to-[#fc3c6a]"
-              style={{ width: `${pct}%` }}
+              className={cn(
+                "absolute inset-y-0 left-0 bg-gradient-to-r from-[#ff5f6d] to-[#fc3c6a]",
+                previewUnavailable && "opacity-30"
+              )}
+              style={{ width: previewUnavailable ? "100%" : `${pct}%` }}
             />
-            {hoverPct !== null && (
+            {hoverPct !== null && !previewUnavailable && (
               <div
                 className="absolute inset-y-0 w-px bg-white/40"
                 style={{ left: `${hoverPct}%` }}
@@ -84,30 +100,43 @@ export function MiniPlayer() {
               </p>
             </div>
 
-            <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-medium text-ink-faint tabular-nums">
-              <span>{formatClock(progressSec)}</span>
-              <span>/</span>
-              <span>{formatClock(durationSec)}</span>
-            </div>
+            {!previewUnavailable && (
+              <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-medium text-ink-faint tabular-nums">
+                <span>{formatClock(progressSec)}</span>
+                <span>/</span>
+                <span>{formatClock(durationSec)}</span>
+              </div>
+            )}
 
-            {isSynthesized && (
-              <span className="hidden md:inline-flex items-center gap-1 rounded-full border border-accent/25 bg-accent-soft px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-accent">
-                <Radio className="h-2.5 w-2.5" />
-                Podgląd demo
+            {previewUnavailable && (
+              <span className="hidden md:inline-flex items-center gap-1 rounded-full border border-spotify/25 bg-spotify-soft px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-spotify">
+                Próbka niedostępna
               </span>
             )}
 
-            <button
-              onClick={toggle}
-              disabled={isBuffering}
-              className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-black shadow-lg transition-transform active:scale-95",
-                isBuffering && "opacity-60"
-              )}
-              aria-label={isPlaying ? "Pauza" : "Odtwórz"}
-            >
-              {isPlaying ? <Pause className="h-4 w-4 fill-black" /> : <Play className="h-4 w-4 fill-black ml-0.5" />}
-            </button>
+            {previewUnavailable ? (
+              <button
+                onClick={openCurrentInSpotify}
+                className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-spotify px-4 text-xs font-semibold text-black shadow-lg transition-transform active:scale-95"
+                aria-label="Otwórz w Spotify"
+                title="Otwórz w Spotify"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Otwórz w Spotify
+              </button>
+            ) : (
+              <button
+                onClick={toggle}
+                disabled={isBuffering}
+                className={cn(
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-black shadow-lg transition-transform active:scale-95",
+                  isBuffering && "opacity-60"
+                )}
+                aria-label={isPlaying ? "Pauza" : "Odtwórz"}
+              >
+                {isPlaying ? <Pause className="h-4 w-4 fill-black" /> : <Play className="h-4 w-4 fill-black ml-0.5" />}
+              </button>
+            )}
 
             <button
               onClick={stop}

@@ -28,6 +28,7 @@ export function HistoryRow({ entry, index = 0 }: { entry: HistoryEntry; index?: 
         artwork: entry.artwork,
         durationMs: entry.durationMs,
         previewUrl: entry.previewUrl,
+        externalUrl: entry.externalUrl,
       });
   };
 

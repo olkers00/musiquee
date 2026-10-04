@@ -11,6 +11,14 @@ export function GenreBreakdown({ data }: { data: GenreBreakdownEntry[] }) {
   const mounted = useMounted();
   const top = data.slice(0, 6);
 
+  if (mounted && top.length === 0) {
+    return (
+      <div className="flex h-36 items-center justify-center text-center text-xs text-ink-faint">
+        Brak wystarczających danych do zbudowania wykresu.
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-6">
       <div className="h-36 w-36 shrink-0">

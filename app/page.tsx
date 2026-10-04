@@ -11,12 +11,14 @@ import { GenreBreakdown } from "@/components/dashboard/genre-breakdown";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrackRow } from "@/components/tracks/track-row";
 import { StatCardSkeleton, TrackRowSkeleton } from "@/components/common/skeletons";
+import { formatDuration } from "@/lib/utils/format";
 
 export default function DashboardPage() {
   const { dataset, status, mode } = useSpotify();
   const isLoading = status === "connecting";
   const { stats } = dataset;
   const topTracks = dataset.topTracks.medium_term;
+  const hasGenres = stats.genreBreakdown.length > 0;
 
   return (
     <div>
@@ -41,20 +43,38 @@ export default function DashboardPage() {
               delay={0}
             />
             <StatCard
-              label={stats.avgDanceability !== null ? "Śr. taneczność" : "Popularność artystów"}
+              label={
+                stats.avgDanceability !== null
+                  ? "Śr. taneczność"
+                  : stats.avgArtistPopularity > 0
+                    ? "Popularność artystów"
+                    : "Śr. czas utworu"
+              }
               value={
                 stats.avgDanceability !== null
                   ? `${Math.round(stats.avgDanceability)}/100`
-                  : `${stats.avgArtistPopularity}/100`
+                  : stats.avgArtistPopularity > 0
+                    ? `${stats.avgArtistPopularity}/100`
+                    : formatDuration(stats.avgTrackDurationMs)
               }
-              sublabel={stats.avgDanceability !== null ? "wg Spotify Audio Features" : "zastępczy wskaźnik — Audio Features niedostępne"}
+              sublabel={
+                stats.avgDanceability !== null
+                  ? "wg Spotify Audio Features"
+                  : stats.avgArtistPopularity > 0
+                    ? "zastępczy wskaźnik — Audio Features niedostępne"
+                    : "średnia długość utworu w Top 50"
+              }
               icon={Music2}
               delay={0.05}
             />
             <StatCard
-              label="Ulubiony gatunek"
-              value={stats.topGenre}
-              sublabel={`${stats.genreBreakdown[0]?.percentage ?? 0}% Twoich artystów`}
+              label={hasGenres ? "Ulubiony gatunek" : "Najczęstszy rok wydania"}
+              value={hasGenres ? stats.topGenre : String(stats.mostCommonReleaseYear ?? "—")}
+              sublabel={
+                hasGenres
+                  ? `${stats.genreBreakdown[0]?.percentage ?? 0}% Twoich artystów`
+                  : "gatunki niedostępne w API Spotify"
+              }
               icon={Flame}
               delay={0.1}
             />
@@ -87,10 +107,11 @@ export default function DashboardPage() {
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Gatunki</CardTitle>
+            <CardTitle>{hasGenres ? "Gatunki" : "Lata wydania"}</CardTitle>
+            {!hasGenres && <span className="text-xs text-ink-faint">zastępczo — gatunki niedostępne</span>}
           </CardHeader>
           <CardContent>
-            <GenreBreakdown data={stats.genreBreakdown} />
+            <GenreBreakdown data={hasGenres ? stats.genreBreakdown : stats.releaseYearBreakdown} />
           </CardContent>
         </Card>
       </div>

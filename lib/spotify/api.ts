@@ -112,12 +112,43 @@ function mapHistoryEntry(raw: SpotifyRecentlyPlayedItem, index: number): History
     artwork: track.artwork,
     durationMs: track.durationMs,
     previewUrl: track.previewUrl,
+    externalUrl: track.externalUrl,
     playedAt: raw.played_at,
   };
 }
 
+/** True only when Spotify actually sent a usable popularity integer — lets
+ *  callers tell "really 0" apart from "field missing/omitted", which some
+ *  /me/top/tracks responses do for tracks Spotify hasn't scored yet. */
+function hasValidPopularity(raw: SpotifyTrack): boolean {
+  return typeof raw.popularity === "number" && Number.isFinite(raw.popularity);
+}
+
 export async function getMe(): Promise<SpotifyMe> {
   return spotifyFetch<SpotifyMe>("/me");
+}
+
+/** Full (non-simplified) track objects always carry popularity — used to
+ *  backfill tracks whose Top Tracks entry came back without the field. */
+export async function getTracksByIds(trackIds: string[]): Promise<Track[]> {
+  const uniqueIds = Array.from(new Set(trackIds.filter(Boolean)));
+  if (uniqueIds.length === 0) return [];
+
+  const batches: string[][] = [];
+  for (let i = 0; i < uniqueIds.length; i += 50) {
+    batches.push(uniqueIds.slice(i, i + 50));
+  }
+
+  try {
+    const results = await Promise.all(
+      batches.map((batch) => spotifyFetch<{ tracks: SpotifyTrack[] }>(`/tracks?ids=${batch.join(",")}`))
+    );
+    return results.flatMap((res) => res?.tracks?.filter(Boolean).map(mapTrack) ?? []);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[Musiquee/Spotify API] getTracksByIds failed:", err);
+    return [];
+  }
 }
 
 export async function getTopTracks(range: TimeRange, limit = 50): Promise<Track[]> {
@@ -125,7 +156,17 @@ export async function getTopTracks(range: TimeRange, limit = 50): Promise<Track[
     const res = await spotifyFetch<SpotifyPagedResponse<SpotifyTrack>>(
       `/me/top/tracks?time_range=${range}&limit=${limit}`
     );
-    return res?.items?.map(mapTrack) ?? [];
+    const items = res?.items ?? [];
+    let tracks = items.map(mapTrack);
+
+    const missingIds = items.filter((raw) => !hasValidPopularity(raw)).map((raw) => raw.id);
+    if (missingIds.length > 0) {
+      const refetched = await getTracksByIds(missingIds);
+      const byId = new Map(refetched.map((t) => [t.id, t.popularity]));
+      tracks = tracks.map((t) => (byId.has(t.id) ? { ...t, popularity: byId.get(t.id)! } : t));
+    }
+
+    return tracks;
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("[Musiquee/Spotify API] getTopTracks failed:", err);

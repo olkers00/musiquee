@@ -36,10 +36,14 @@ async function fetchRealDataset(): Promise<Dataset> {
   const topTracksByRange = Object.fromEntries(topTracksEntries) as Record<TimeRange, Track[]>;
   const topArtistsByRange = Object.fromEntries(topArtistsEntries) as Record<TimeRange, Artist[]>;
 
-  const statsArtistIds = new Set(topArtistsByRange.medium_term.map((a) => a.id));
-  const missingArtistIds = topArtistsByRange.medium_term.length
-    ? topTracksByRange.medium_term.map((t) => t.artistId).filter((id): id is string => !!id && !statsArtistIds.has(id))
-    : [];
+  // Genres (and, as a last resort, popularity) live on Artist objects —
+  // fetch every artist behind a top track that didn't already surface via
+  // the Top Artists endpoint, even if that endpoint came back fully empty.
+  const knownArtistIds = new Set(Object.values(topArtistsByRange).flatMap((artists) => artists.map((a) => a.id)));
+  const missingArtistIds = Object.values(topTracksByRange)
+    .flat()
+    .map((t) => t.artistId)
+    .filter((id): id is string => !!id && !knownArtistIds.has(id));
 
   const [recentlyPlayed, avgDanceability, extraGenreArtists] = await Promise.all([
     getRecentlyPlayed(),
@@ -47,7 +51,33 @@ async function fetchRealDataset(): Promise<Dataset> {
     getArtistsByIds(missingArtistIds),
   ]);
 
-  return buildDataset({ topTracksByRange, topArtistsByRange, recentlyPlayed, avgDanceability, extraGenreArtists });
+  // Last-resort popularity backfill: Spotify very occasionally omits
+  // popularity from both the Top Tracks response and the /tracks refetch
+  // (getTopTracks already tries that). When a track still reads 0, use its
+  // primary artist's popularity instead of showing a dead "0/100".
+  const artistPopularityById = new Map<string, number>();
+  for (const artist of [...Object.values(topArtistsByRange).flat(), ...extraGenreArtists]) {
+    if (!artistPopularityById.has(artist.id)) artistPopularityById.set(artist.id, artist.popularity);
+  }
+
+  const patchedTopTracksByRange = Object.fromEntries(
+    Object.entries(topTracksByRange).map(([range, tracks]) => [
+      range,
+      tracks.map((t) => {
+        if (t.popularity > 0 || !t.artistId) return t;
+        const artistPopularity = artistPopularityById.get(t.artistId);
+        return artistPopularity ? { ...t, popularity: artistPopularity } : t;
+      }),
+    ])
+  ) as Record<TimeRange, Track[]>;
+
+  return buildDataset({
+    topTracksByRange: patchedTopTracksByRange,
+    topArtistsByRange,
+    recentlyPlayed,
+    avgDanceability,
+    extraGenreArtists,
+  });
 }
 
 export function SpotifyProvider({ children }: { children: ReactNode }) {

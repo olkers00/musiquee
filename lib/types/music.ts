@@ -54,6 +54,7 @@ export interface HistoryEntry {
   artwork: string;
   durationMs: number;
   previewUrl: string | null;
+  externalUrl: string;
   playedAt: string;
 }
 
@@ -75,6 +76,11 @@ export interface DashboardStats {
   avgArtistPopularity: number;
   topGenre: string;
   genreBreakdown: GenreBreakdownEntry[];
+  /** Always populated from Top 50 release years — the ready fallback for the
+   *  "Gatunki" card when Spotify returns no usable artist genres at all. */
+  releaseYearBreakdown: GenreBreakdownEntry[];
+  mostCommonReleaseYear: number | null;
+  avgTrackDurationMs: number;
   uniqueArtists: number;
   popularityTrend: PopularityTrendPoint[];
 }
@@ -96,4 +102,5 @@ export interface Playable {
   artwork: string;
   durationMs: number;
   previewUrl: string | null;
+  externalUrl: string;
 }

@@ -40,12 +40,17 @@ function deriveAlbums(tracks: Track[]): Album[] {
     .map((entry) => entry.album);
 }
 
+function dedupeArtists(artists: Artist[]): Artist[] {
+  const byId = new Map<string, Artist>();
+  for (const artist of artists) {
+    if (!byId.has(artist.id)) byId.set(artist.id, artist);
+  }
+  return Array.from(byId.values());
+}
+
 function deriveGenreBreakdown(artists: Artist[]): GenreBreakdownEntry[] {
   const weights = new Map<string, number>();
-  const seenArtists = new Set<string>();
   for (const artist of artists) {
-    if (seenArtists.has(artist.id)) continue;
-    seenArtists.add(artist.id);
     for (const genre of artist.genres) {
       weights.set(genre, (weights.get(genre) ?? 0) + 1);
     }
@@ -62,6 +67,38 @@ function deriveGenreBreakdown(artists: Artist[]): GenreBreakdownEntry[] {
       weight,
       percentage: Math.round((weight / total) * 100),
     }));
+}
+
+/** Release years are always present on every track — the one breakdown
+ *  that can never come back empty, so it doubles as the "Gatunki" card's
+ *  fallback when Spotify hands back no usable artist genres at all. */
+function deriveReleaseYearBreakdown(tracks: Track[]): GenreBreakdownEntry[] {
+  const weights = new Map<number, number>();
+  for (const track of tracks) {
+    weights.set(track.albumReleaseYear, (weights.get(track.albumReleaseYear) ?? 0) + 1);
+  }
+
+  const total = tracks.length;
+  if (total === 0) return [];
+
+  return Array.from(weights.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([year, weight]) => ({
+      genre: String(year),
+      weight,
+      percentage: Math.round((weight / total) * 100),
+    }));
+}
+
+function deriveMostCommonReleaseYear(tracks: Track[]): number | null {
+  const [top] = deriveReleaseYearBreakdown(tracks);
+  return top ? Number(top.genre) : null;
+}
+
+function deriveAvgTrackDurationMs(tracks: Track[]): number {
+  if (tracks.length === 0) return 0;
+  return Math.round(tracks.reduce((sum, t) => sum + (Number(t.durationMs) || 0), 0) / tracks.length);
 }
 
 function derivePopularityTrend(tracks: Track[]): PopularityTrendPoint[] {
@@ -98,15 +135,16 @@ export function buildDataset(sources: DatasetSources): Dataset {
 
   const statsTracks = sources.topTracksByRange[STATS_RANGE];
   const statsArtists = sources.topArtistsByRange[STATS_RANGE];
-  const genreBreakdown = deriveGenreBreakdown([...statsArtists, ...(sources.extraGenreArtists ?? [])]);
+  const combinedArtists = dedupeArtists([...statsArtists, ...(sources.extraGenreArtists ?? [])]);
+  const genreBreakdown = deriveGenreBreakdown(combinedArtists);
   const uniqueArtists = new Set(statsTracks.map((t) => t.artistId ?? t.artist)).size;
   const avgPopularity =
     statsTracks.length > 0
       ? Math.round(statsTracks.reduce((sum, t) => sum + (Number(t.popularity) || 0), 0) / statsTracks.length)
       : 0;
   const avgArtistPopularity =
-    statsArtists.length > 0
-      ? Math.round(statsArtists.reduce((sum, a) => sum + (Number(a.popularity) || 0), 0) / statsArtists.length)
+    combinedArtists.length > 0
+      ? Math.round(combinedArtists.reduce((sum, a) => sum + (Number(a.popularity) || 0), 0) / combinedArtists.length)
       : 0;
 
   const numberOneTrack: Track = statsTracks[0] ?? {
@@ -137,6 +175,9 @@ export function buildDataset(sources: DatasetSources): Dataset {
       avgArtistPopularity,
       topGenre: genreBreakdown[0]?.genre ?? "Brak danych",
       genreBreakdown,
+      releaseYearBreakdown: deriveReleaseYearBreakdown(statsTracks),
+      mostCommonReleaseYear: deriveMostCommonReleaseYear(statsTracks),
+      avgTrackDurationMs: deriveAvgTrackDurationMs(statsTracks),
       uniqueArtists,
       popularityTrend: derivePopularityTrend(statsTracks),
     },
