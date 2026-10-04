@@ -1,12 +1,43 @@
+import {
+  SPOTIFY_AUTHORIZE_URL,
+  SPOTIFY_CLIENT_ID,
+  SPOTIFY_PROD_REDIRECT_URI,
+  SPOTIFY_SCOPES,
+  SPOTIFY_TOKEN_URL,
+  getRedirectUri,
+} from "./config";
 import { createPkcePair, createState } from "./pkce";
-import { SPOTIFY_AUTHORIZE_URL, SPOTIFY_CLIENT_ID, SPOTIFY_SCOPES, SPOTIFY_TOKEN_URL, getRedirectUri } from "./config";
 import { clearStoredTokens, getStoredTokens, readAndClearPkce, setStoredTokens, stashPkce, type StoredTokens } from "./token-storage";
 
 export class SpotifyAuthError extends Error {}
 
+/** Logs the exact redirect_uri Spotify will check against the dashboard
+ *  config, right before every authorize attempt. "INVALID_CLIENT: Invalid
+ *  redirect URI" / "redirect_uri: Not matching configuration" always means
+ *  this value isn't registered — byte-for-byte — under the app's Redirect
+ *  URIs at https://developer.spotify.com/dashboard, so surfacing it here
+ *  turns a cryptic Spotify-hosted error page into an actionable fix. */
+function logRedirectUriSetup(redirectUri: string): void {
+  if (process.env.NODE_ENV === "production") return;
+  // eslint-disable-next-line no-console
+  console.info(
+    `%c[Musiquee/Spotify OAuth]%c Add these EXACT Redirect URIs in the dashboard\n` +
+      `(https://developer.spotify.com/dashboard → your app → Edit Settings → Redirect URIs):\n` +
+      `  • this request:  ${redirectUri}\n` +
+      `  • production:    ${SPOTIFY_PROD_REDIRECT_URI}\n` +
+      `A mismatch (scheme, host, port, or trailing slash) is what causes\n` +
+      `"INVALID_CLIENT: Invalid redirect URI".`,
+    "font-weight:bold;color:#1db954",
+    "color:inherit"
+  );
+}
+
 /** Kicks off the Authorization Code + PKCE flow — no client secret needed,
  *  which is the only option that works from a statically exported SPA. */
 export async function redirectToSpotifyAuthorize(): Promise<void> {
+  const redirectUri = getRedirectUri();
+  logRedirectUriSetup(redirectUri);
+
   const { verifier, challenge } = await createPkcePair();
   const state = createState();
   stashPkce(verifier, state);
@@ -14,7 +45,7 @@ export async function redirectToSpotifyAuthorize(): Promise<void> {
   const params = new URLSearchParams({
     client_id: SPOTIFY_CLIENT_ID,
     response_type: "code",
-    redirect_uri: getRedirectUri(),
+    redirect_uri: redirectUri,
     scope: SPOTIFY_SCOPES,
     code_challenge_method: "S256",
     code_challenge: challenge,

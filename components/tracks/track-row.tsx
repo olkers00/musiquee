@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import type { Track } from "@/lib/types/music";
 import { usePlayer } from "@/hooks/usePlayer";
+import { useSpotify } from "@/hooks/useSpotify";
 import { TrackArtwork } from "@/components/ui/track-artwork";
 import { Badge } from "@/components/ui/badge";
 import { OpenInSpotify } from "@/components/common/open-in-spotify";
@@ -19,7 +20,9 @@ interface TrackRowProps {
 
 export function TrackRow({ track, rank, index = 0, showAlbum = true, dense = false }: TrackRowProps) {
   const { currentTrack, isPlaying, play, toggle } = usePlayer();
+  const { mode } = useSpotify();
   const isActive = currentTrack?.id === track.id;
+  const locked = mode !== "spotify";
 
   const handleToggle = () => {
     if (isActive) toggle();
@@ -64,18 +67,27 @@ export function TrackRow({ track, rank, index = 0, showAlbum = true, dense = fal
         size={dense ? 40 : 48}
         isActive={isActive}
         isPlaying={isActive && isPlaying}
+        blurred={locked}
       />
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <p className={cn("truncate text-sm font-medium", isActive ? "text-accent" : "text-ink")}>{track.title}</p>
-          {track.explicit && (
+          <p
+            className={cn(
+              "truncate text-sm font-medium",
+              locked && "blur-[5px] select-none",
+              isActive ? "text-accent" : "text-ink"
+            )}
+          >
+            {track.title}
+          </p>
+          {track.explicit && !locked && (
             <Badge variant="outline" className="shrink-0">
               E
             </Badge>
           )}
         </div>
-        <p className="truncate text-xs text-ink-soft">
+        <p className={cn("truncate text-xs text-ink-soft", locked && "blur-[5px] select-none")}>
           {track.artist}
           {showAlbum && track.album && <span className="text-ink-faint"> — {track.album}</span>}
         </p>
@@ -89,10 +101,12 @@ export function TrackRow({ track, rank, index = 0, showAlbum = true, dense = fal
         {formatDuration(track.durationMs)}
       </span>
 
-      <OpenInSpotify
-        url={track.externalUrl}
-        className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
-      />
+      {!locked && (
+        <OpenInSpotify
+          url={track.externalUrl}
+          className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+        />
+      )}
     </motion.div>
   );
 }

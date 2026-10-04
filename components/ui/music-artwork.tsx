@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { Lock } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface MusicArtworkProps {
@@ -11,6 +12,7 @@ interface MusicArtworkProps {
   isSong: boolean;
   isPlaying: boolean;
   isLoading?: boolean;
+  blurred?: boolean;
   onToggle?: () => void;
   size?: number;
   className?: string;
@@ -28,6 +30,7 @@ export default function MusicArtwork({
   isSong,
   isPlaying,
   isLoading = false,
+  blurred = false,
   onToggle,
   size = 256,
   className,
@@ -84,7 +87,7 @@ export default function MusicArtwork({
 
   return (
     <div className={cn("relative", className)}>
-      {isHovered && (
+      {isHovered && !blurred && (
         <div
           className="fixed z-50 pointer-events-none hidden sm:block"
           style={{ left: mousePosition.x, top: mousePosition.y }}
@@ -159,37 +162,60 @@ export default function MusicArtwork({
             height={size}
             unoptimized
             className={cn(
-              "h-full w-full object-cover transition-all duration-500 ease-out group-hover:scale-105",
-              !imageLoaded ? "opacity-0" : "opacity-100"
+              "h-full w-full object-cover transition-all duration-500 ease-out",
+              !blurred && "group-hover:scale-105",
+              blurred ? "scale-110 blur-xl saturate-75" : !imageLoaded ? "opacity-0" : "opacity-100"
             )}
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageLoaded(true)}
           />
           {!imageLoaded && <div className="absolute inset-0 skeleton bg-surface-2" />}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          {blurred ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 backdrop-blur-md">
+                <Lock className="h-4 w-4 text-white/85 transition-opacity duration-200 group-hover:opacity-0" />
+                {onToggle && (
+                  <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                    {isPlaying ? (
+                      <div className="flex gap-1">
+                        <span className="h-3.5 w-1 rounded-full bg-white" />
+                        <span className="h-3.5 w-1 rounded-full bg-white" />
+                      </div>
+                    ) : (
+                      <div className="ml-0.5 h-0 w-0 border-y-[6px] border-y-transparent border-l-[9px] border-l-white" />
+                    )}
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-          <div
-            className={cn(
-              "absolute bottom-3 left-3 right-3 flex items-center justify-between transition-all duration-300",
-              isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
-            )}
-          >
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">{music}</p>
-              <p className="truncate text-xs text-white/70">{artist}</p>
-            </div>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur-md">
-              {isPlaying ? (
-                <div className="flex gap-1">
-                  <span className="h-3.5 w-1 rounded-full bg-white" />
-                  <span className="h-3.5 w-1 rounded-full bg-white" />
+              <div
+                className={cn(
+                  "absolute bottom-3 left-3 right-3 flex items-center justify-between transition-all duration-300",
+                  isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
+                )}
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-white">{music}</p>
+                  <p className="truncate text-xs text-white/70">{artist}</p>
                 </div>
-              ) : (
-                <div className="ml-0.5 h-0 w-0 border-y-[6px] border-y-transparent border-l-[9px] border-l-white" />
-              )}
-            </div>
-          </div>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur-md">
+                  {isPlaying ? (
+                    <div className="flex gap-1">
+                      <span className="h-3.5 w-1 rounded-full bg-white" />
+                      <span className="h-3.5 w-1 rounded-full bg-white" />
+                    </div>
+                  ) : (
+                    <div className="ml-0.5 h-0 w-0 border-y-[6px] border-y-transparent border-l-[9px] border-l-white" />
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

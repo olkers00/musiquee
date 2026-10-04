@@ -5,7 +5,7 @@ import type { GenreBreakdownEntry } from "@/lib/types/music";
 import { useMounted } from "@/hooks/useMounted";
 import { ChartSkeleton } from "@/components/common/skeletons";
 
-const COLORS = ["#fc3c6a", "#ff8a65", "#c026d3", "#43cbff", "#67f0c3", "#f6d242", "#8ec5fc"];
+const COLORS = ["#fc3c6a", "#ff8a65", "#c026d3", "#43cbff", "#1db954", "#f6d242", "#8ec5fc"];
 
 export function GenreBreakdown({ data }: { data: GenreBreakdownEntry[] }) {
   const mounted = useMounted();

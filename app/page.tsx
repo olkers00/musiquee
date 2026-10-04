@@ -59,6 +59,7 @@ export default function DashboardPage() {
               value={String(stats.uniqueArtists)}
               sublabel="unikalnych w Top 50"
               icon={Users}
+              accent="spotify"
               delay={0.15}
             />
           </>

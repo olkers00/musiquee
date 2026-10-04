@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Pause, Play } from "lucide-react";
+import { Lock, Pause, Play } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface TrackArtworkProps {
@@ -11,6 +11,7 @@ interface TrackArtworkProps {
   rounded?: string;
   isActive?: boolean;
   isPlaying?: boolean;
+  blurred?: boolean;
   onToggle?: () => void;
   className?: string;
 }
@@ -22,6 +23,7 @@ export function TrackArtwork({
   rounded = "rounded-lg",
   isActive = false,
   isPlaying = false,
+  blurred = false,
   onToggle,
   className,
 }: TrackArtworkProps) {
@@ -48,21 +50,30 @@ export function TrackArtwork({
         width={size}
         height={size}
         unoptimized
-        className="h-full w-full object-cover"
+        className={cn("h-full w-full scale-110 object-cover", blurred && "blur-md saturate-75")}
       />
-      {onToggle && (
-        <span
-          className={cn(
-            "absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity duration-200 group-hover:opacity-100",
-            isActive && isPlaying && "opacity-100 bg-black/35"
-          )}
-        >
-          {isActive && isPlaying ? (
-            <Pause className="h-1/3 w-1/3 fill-white text-white" />
-          ) : (
-            <Play className="h-1/3 w-1/3 fill-white text-white" />
+      {blurred ? (
+        <span className="absolute inset-0 flex items-center justify-center bg-black/25">
+          <Lock className="h-1/3 w-1/3 text-white/80 transition-opacity duration-200 group-hover:opacity-0" />
+          {onToggle && (
+            <Play className="absolute h-1/3 w-1/3 fill-white text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
           )}
         </span>
+      ) : (
+        onToggle && (
+          <span
+            className={cn(
+              "absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity duration-200 group-hover:opacity-100",
+              isActive && isPlaying && "opacity-100 bg-black/35"
+            )}
+          >
+            {isActive && isPlaying ? (
+              <Pause className="h-1/3 w-1/3 fill-white text-white" />
+            ) : (
+              <Play className="h-1/3 w-1/3 fill-white text-white" />
+            )}
+          </span>
+        )
       )}
       {isActive && isPlaying && (
         <span className="absolute bottom-1 left-1 flex items-end gap-[2px] h-2.5">

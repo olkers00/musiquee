@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import type { HistoryEntry } from "@/lib/types/music";
 import { usePlayer } from "@/hooks/usePlayer";
+import { useSpotify } from "@/hooks/useSpotify";
 import { TrackArtwork } from "@/components/ui/track-artwork";
 import { cn } from "@/lib/utils/cn";
 
@@ -12,7 +13,9 @@ function formatTime(iso: string): string {
 
 export function HistoryRow({ entry, index = 0 }: { entry: HistoryEntry; index?: number }) {
   const { currentTrack, isPlaying, play, toggle } = usePlayer();
+  const { mode } = useSpotify();
   const isActive = currentTrack?.id === entry.trackId;
+  const locked = mode !== "spotify";
 
   const handleToggle = () => {
     if (isActive) toggle();
@@ -41,10 +44,25 @@ export function HistoryRow({ entry, index = 0 }: { entry: HistoryEntry; index?: 
         isActive && "bg-surface"
       )}
     >
-      <TrackArtwork src={entry.artwork} alt={entry.title} size={44} isActive={isActive} isPlaying={isActive && isPlaying} />
+      <TrackArtwork
+        src={entry.artwork}
+        alt={entry.title}
+        size={44}
+        isActive={isActive}
+        isPlaying={isActive && isPlaying}
+        blurred={locked}
+      />
       <div className="min-w-0 flex-1">
-        <p className={cn("truncate text-sm font-medium", isActive ? "text-accent" : "text-ink")}>{entry.title}</p>
-        <p className="truncate text-xs text-ink-soft">{entry.artist}</p>
+        <p
+          className={cn(
+            "truncate text-sm font-medium",
+            locked && "blur-[5px] select-none",
+            isActive ? "text-accent" : "text-ink"
+          )}
+        >
+          {entry.title}
+        </p>
+        <p className={cn("truncate text-xs text-ink-soft", locked && "blur-[5px] select-none")}>{entry.artist}</p>
       </div>
       <span className="shrink-0 text-xs text-ink-faint tabular-nums">{formatTime(entry.playedAt)}</span>
     </motion.button>

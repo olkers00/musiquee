@@ -10,7 +10,7 @@ interface StatCardProps {
   value: string;
   sublabel?: string;
   icon: LucideIcon;
-  accent?: boolean;
+  accent?: boolean | "spotify";
   delay?: number;
 }
 
@@ -25,7 +25,7 @@ export function StatCard({ label, value, sublabel, icon: Icon, accent = false, d
         <div
           className={cn(
             "absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl opacity-30",
-            accent ? "bg-accent" : "bg-white"
+            accent === "spotify" ? "bg-spotify" : accent ? "bg-accent" : "bg-white"
           )}
         />
         <div className="relative flex items-start justify-between">
@@ -37,7 +37,11 @@ export function StatCard({ label, value, sublabel, icon: Icon, accent = false, d
           <div
             className={cn(
               "flex h-9 w-9 items-center justify-center rounded-full",
-              accent ? "bg-accent-soft text-accent" : "bg-surface-2 text-ink-soft"
+              accent === "spotify"
+                ? "bg-spotify-soft text-spotify"
+                : accent
+                  ? "bg-accent-soft text-accent"
+                  : "bg-surface-2 text-ink-soft"
             )}
           >
             <Icon className="h-4 w-4" />

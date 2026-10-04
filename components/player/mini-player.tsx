@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Pause, Play, Radio, X } from "lucide-react";
 import { usePlayer } from "@/hooks/usePlayer";
+import { useSpotify } from "@/hooks/useSpotify";
 import { TrackArtwork } from "@/components/ui/track-artwork";
 import { cn } from "@/lib/utils/cn";
 
@@ -16,6 +17,8 @@ function formatClock(seconds: number): string {
 export function MiniPlayer() {
   const { currentTrack, isPlaying, isBuffering, progressSec, durationSec, isSynthesized, toggle, seek, stop } =
     usePlayer();
+  const { mode } = useSpotify();
+  const locked = mode !== "spotify";
   const trackRef = useRef<HTMLDivElement>(null);
   const [hoverPct, setHoverPct] = useState<number | null>(null);
 
@@ -68,12 +71,17 @@ export function MiniPlayer() {
               size={44}
               isActive
               isPlaying={isPlaying}
+              blurred={locked}
               onToggle={toggle}
             />
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-ink">{currentTrack.title}</p>
-              <p className="truncate text-xs text-ink-soft">{currentTrack.artist}</p>
+              <p className={cn("truncate text-sm font-semibold text-ink", locked && "blur-[4px] select-none")}>
+                {currentTrack.title}
+              </p>
+              <p className={cn("truncate text-xs text-ink-soft", locked && "blur-[4px] select-none")}>
+                {currentTrack.artist}
+              </p>
             </div>
 
             <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-medium text-ink-faint tabular-nums">
